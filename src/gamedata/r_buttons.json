@@ -1,0 +1,29 @@
+[
+    {
+        "region_id": 1,
+        "name": "button_1",
+        "width": 500,
+        "height": 100,
+        "pos_x": 10,
+        "pos_y": 10,
+        "text": "button_1"
+    },
+    {
+        "region_id": 2,
+        "name": "button_2",
+        "width": 600,
+        "height": 100,
+        "pos_x": 10,
+        "pos_y": 120,
+        "text": "button_2"
+    },
+    {
+        "region_id": 3,
+        "name": "button_3",
+        "width": 500,
+        "height": 500,
+        "pos_x": 10,
+        "pos_y": 230,
+        "text": "button_3"
+    }
+]
