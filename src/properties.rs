@@ -8,16 +8,23 @@ use std::mem;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum Components {
-    CPos,
-    CRect
+pub enum PropertiesEnum {
+    pos,
+    rect
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct CPos {
+pub struct PPos {
     pub x: u32,
     pub y: u32
 }
+
 #[derive(Debug, Clone)]
-pub struct CRect<'a> {
-    pub rect: RectangleShape<'a>,
+pub struct PRect {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+    pub c: Color,
+    pub draw: bool
 }

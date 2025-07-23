@@ -10,18 +10,14 @@ use serde::{Serialize, Deserialize};
 use crate::entities::EntityManager;
 
 mod entities;
-mod components;
+mod properties;
 mod systems;
 
 #[link(name = "Advapi32")]
 
 unsafe extern "system" {}
 
-pub static BASE: Color    = Color::rgba(36, 41, 46, 255);
-pub static LIGHTER: Color = Color::rgba(43, 49, 55, 255);
-pub static ENCAPSULATION_REGIONS: Color  = Color::rgba(29, 33, 37, 255);
-pub static BUTTON: Color  = Color::rgba(19, 81, 150, 255);
-pub static BORDER: Color  = Color::rgba(24, 26, 28, 255);
+
 
 const CHUNK_SIZE: usize = 1024; // u32s per chunk
 const NUM_CHUNKS: usize = 256;
@@ -118,6 +114,7 @@ pub struct Game {
     id_last: u32,
     font: FBox<Font>,
     state: Vec<u32>, // see state definitions at the bottom of file to make sense of this.
+    em: entities::EntityManager
 }
 
 impl Game {
@@ -142,12 +139,13 @@ impl Game {
 
         let state_vec: Vec<u32> = vec![0; num_elements];
 
-        Game { window, r_encapsulations: Vec::new(), r_buttons: Vec::new(), id_last: id_last_init, font, state: state_vec }
+        Game { window, r_encapsulations: Vec::new(), r_buttons: Vec::new(), id_last: id_last_init, font, state: state_vec, em: entities::EntityManager::new() }
     }
 
     fn init(&mut self) {
         self.load_r_encapsulations("./src/gamedata/r_encapsulations.json");
         self.load_r_buttons("./src/gamedata/r_buttons.json");
+        self.spawn_player();
     }
 
     fn load_r_encapsulations(&mut self, fp: &str) {
@@ -171,7 +169,6 @@ impl Game {
     }
 
     fn cache_user_input(&mut self) {
-        // Store previous LMB state
         self.state[LMB_PREV] = self.state[LMB_NOW];
 
         while let Some(event) = self.window.poll_event() {
@@ -237,7 +234,7 @@ impl Game {
     }
 
     fn render(&mut self) {
-        self.window.clear(BASE);
+        self.window.clear(entities::BASE);
 
         // render GUI
         // Render Encapsulation Regions
@@ -245,8 +242,8 @@ impl Game {
             let mut region_shape = RectangleShape::new();
             region_shape.set_size((region.get_width() as f32, region.get_height() as f32));
             region_shape.set_position((region.get_pos_x() as f32, region.get_pos_y() as f32));
-            region_shape.set_fill_color(ENCAPSULATION_REGIONS);
-            region_shape.set_outline_color(BORDER);
+            region_shape.set_fill_color(entities::ENCAPSULATION_REGIONS);
+            region_shape.set_outline_color(entities::BORDER);
             region_shape.set_outline_thickness(2.0);
             self.window.draw(&region_shape);
         }
@@ -256,8 +253,8 @@ impl Game {
             let mut button_shape = RectangleShape::new();
             button_shape.set_size((button.get_width() as f32, button.get_height() as f32));
             button_shape.set_position((button.get_pos_x() as f32, button.get_pos_y() as f32));
-            button_shape.set_fill_color(BUTTON);
-            button_shape.set_outline_color(BORDER);
+            button_shape.set_fill_color(entities::BUTTON);
+            button_shape.set_outline_color(entities::BORDER);
             button_shape.set_outline_thickness(2.0);
             self.window.draw(&button_shape);
             if let Some(text) = button.get_text() {
@@ -267,17 +264,35 @@ impl Game {
                 self.window.draw(&button_text);
             }
         }
-
+        
         self.window.display();
     }
+
+    fn spawn_player(&mut self) {
+        let pid = self.em.add_entity("player".to_string(), entities::EntityType::Player);
+        self.em.add_component_to_entity(properties::PropertiesEnum::rect, pid);
+
+        if let Some(rect) = self.em.rectangles.get_mut(&pid) {
+            rect.width = 800;
+            rect.height = 800;
+            rect.x = 1000;
+            rect.y = 1000;
+            rect.draw = true;
+        }
+
+
+    }
+
 }
 
 fn main() {
-    // let mut g = Game::new();
-    // g.init();
-    // g.run();
-    let mut em = EntityManager::new();
-    em.add_entity("player".to_string(), entities::EntityType::Player);
+    let mut g = Game::new();
+    g.init();
+    g.run();
+    //let mut em = EntityManager::new();
+    //em.add_entity("player".to_string(), entities::EntityType::Player);
+    //let mut p = em.get_entity_from_string("player").unwrap();
+
 }
 
 // STATE DEFINITIONS
