@@ -10,7 +10,8 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PropertiesEnum {
     pos,
-    rect
+    rect,
+    text
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -19,12 +20,25 @@ pub struct PPos {
     pub y: u32
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PRect {
     pub x: u32,
     pub y: u32,
     pub width: u32,
     pub height: u32,
-    pub c: Color,
-    pub draw: bool
+    pub draw: bool,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct PText {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub text: String,
+    pub scale: u32,
+    pub x: u32,
+    pub y: u32
 }

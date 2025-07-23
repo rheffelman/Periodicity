@@ -14,6 +14,7 @@ pub static LIGHTER: Color = Color::rgba(43, 49, 55, 255);
 pub static ENCAPSULATION_REGIONS: Color  = Color::rgba(29, 33, 37, 255);
 pub static BUTTON: Color  = Color::rgba(19, 81, 150, 255);
 pub static BORDER: Color  = Color::rgba(24, 26, 28, 255);
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EntityType {
     Button,
@@ -22,20 +23,20 @@ pub enum EntityType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-
 pub struct Entity {
     tag: String,
-    id: u32,
+    pub id: u32,
     etype: EntityType
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EntityManager {
-    pub entities: Vec<Entity>, // own the values
-    pub positions: HashMap<u32, PPos>, // use id as key
+    pub entities: Vec<Entity>,
+    pub positions: HashMap<u32, PPos>,
     pub rectangles: HashMap<u32, PRect>,
+    pub texts: HashMap<u32, PText>,
     entity_id_counter: u32,
 }
-
 
 impl EntityManager {
     pub fn new() -> Self {
@@ -43,34 +44,37 @@ impl EntityManager {
             entities: Vec::new(),
             positions: HashMap::new(),
             rectangles: HashMap::new(),
+            texts: HashMap::new(),
             entity_id_counter: 0
         }
     }
-
 
     pub fn add_entity(&mut self, name: String, entitytype: EntityType) -> u32 {
         let id = self.entity_id_counter;
         self.entities.push(Entity { tag: name, id, etype: entitytype });
         self.entity_id_counter += 1;
-        id // Return id to caller
+        return id
     }
-
 
     pub fn add_component_to_entity(&mut self, c: PropertiesEnum, id: u32) {
         match c {
             PropertiesEnum::pos => { self.positions.insert(id, PPos { x: 0, y: 0 }); }
-            PropertiesEnum::rect => { self.rectangles.insert(id, PRect { x: 10, y: 10, width: 10, height: 10, c: BUTTON, draw: false }); }
+            PropertiesEnum::rect => { self.rectangles.insert(id, PRect { x: 10, y: 10, width: 10, height: 10, draw: false, r: 19, g: 81, b: 150 }); }
+            PropertiesEnum::text => { self.texts.insert(id, PText { r: (255), g: (255), b: (255), text: ("Run Code".to_string()), scale: (1), x: (50), y: (50) }); }
             _ => {}
         }
     }
 
-
-    pub fn get_crect(&mut self, e: u32) -> Option<&PRect> {
+    pub fn get_prect(&mut self, e: u32) -> Option<&PRect> {
         return self.rectangles.get(&e)
     }
 
-    pub fn get_entity_mut(&mut self, id: u32) -> Option<&mut Entity> {
-        self.entities.iter_mut().find(|e| e.id == id)
+    pub fn get_ptext(&mut self, e: u32) -> Option<&PText> {
+        return self.texts.get(&e)
     }
 
+    pub fn get_entity_mut(&mut self, id: u32) -> Option<&mut Entity> {
+        return self.entities.iter_mut().find(|e| e.id == id)
+    }
+    
 }
