@@ -7,6 +7,11 @@ use std::fs;
 use std::mem;
 use serde::{Serialize, Deserialize};
 
+use crate::entities::EntityManager;
+
+mod entities;
+mod components;
+mod systems;
 
 #[link(name = "Advapi32")]
 
@@ -36,7 +41,7 @@ const BUTTON_FLAGS_BASE: usize = CHUNK_SIZE * CHUNK_BUTTON_FLAGS;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct R_Encapsulation {
+pub struct REncapsulation {
     region_id: u32,
     name: String,
     width: u32,
@@ -45,9 +50,9 @@ pub struct R_Encapsulation {
     pos_y: u32,
 }
 
-impl R_Encapsulation {
+impl REncapsulation {
     pub fn new(region_id: u32, name: String, width: u32, height: u32, pos_x: u32, pos_y: u32) -> Self {
-        R_Encapsulation { region_id, name, width, height, pos_x, pos_y }
+        REncapsulation { region_id, name, width, height, pos_x, pos_y }
     }
     pub fn get_region_id(&self) -> u32 {
         self.region_id
@@ -108,7 +113,7 @@ impl R_Button {
 }
 pub struct Game {
     window: FBox<RenderWindow>,
-    r_encapsulations: Vec<R_Encapsulation>,
+    r_encapsulations: Vec<REncapsulation>,
     r_buttons: Vec<R_Button>,
     id_last: u32,
     font: FBox<Font>,
@@ -268,9 +273,11 @@ impl Game {
 }
 
 fn main() {
-    let mut g = Game::new();
-    g.init();
-    g.run();
+    // let mut g = Game::new();
+    // g.init();
+    // g.run();
+    let mut em = EntityManager::new();
+    em.add_entity("player".to_string(), entities::EntityType::Player);
 }
 
 // STATE DEFINITIONS
