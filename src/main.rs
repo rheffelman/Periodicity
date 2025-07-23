@@ -18,8 +18,6 @@ mod game;
 
 unsafe extern "system" {}
 
-
-
 const CHUNK_SIZE: usize = 1024; // u32s per chunk
 const NUM_CHUNKS: usize = 256;
 const STATE_SIZE: usize = CHUNK_SIZE * NUM_CHUNKS; // 262144
