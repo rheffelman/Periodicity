@@ -18,26 +18,9 @@ mod game;
 
 unsafe extern "system" {}
 
-const CHUNK_SIZE: usize = 1024; // u32s per chunk
-const NUM_CHUNKS: usize = 256;
-const STATE_SIZE: usize = CHUNK_SIZE * NUM_CHUNKS; // 262144
-
-const CHUNK_FLAGS: usize = 0;      // 0..1023
-const CHUNK_MOUSE: usize = 1;      // 1024..2047
-const CHUNK_BUTTON_FLAGS: usize = 2; // 2048..3071
-
-const LMB_NOW: usize = CHUNK_SIZE * CHUNK_FLAGS + 0;
-const LMB_PREV: usize = CHUNK_SIZE * CHUNK_FLAGS + 1;
-
-const MOUSE_X: usize = CHUNK_SIZE * CHUNK_MOUSE + 0;
-const MOUSE_Y: usize = CHUNK_SIZE * CHUNK_MOUSE + 1;
-
-const BUTTON_FLAGS_BASE: usize = CHUNK_SIZE * CHUNK_BUTTON_FLAGS;
-
-
 
 fn main() {
-    let mut g = game::Game::new();
+    let mut g = game::Game::new(3840, 2160);
     g.init();
     g.run();
     //let mut em = EntityManager::new();
