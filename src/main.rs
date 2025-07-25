@@ -11,6 +11,8 @@ mod entities;
 mod properties;
 mod systems;
 mod game;
+mod user_input;
+mod gui;
 
 #[link(name = "Advapi32")]
 unsafe extern "system" {}

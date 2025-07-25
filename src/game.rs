@@ -10,6 +10,7 @@ use std::fs;
 use std::mem;
 use serde::{Serialize, Deserialize};
 use crate::{entities, properties::*};
+use crate::{user_input::*};
 use std::sync::LazyLock;
 pub static BASE: Color    = Color::rgba(36, 41, 46, 255);
 pub static LIGHTER: Color = Color::rgba(43, 49, 55, 255);
@@ -19,12 +20,13 @@ pub static BORDER: Color  = Color::rgba(24, 26, 28, 255);
 
 #[derive(Debug,)]
 pub struct Game {
-    window: FBox<RenderWindow>,
+    pub window: FBox<RenderWindow>,
     window_width: u32,
     window_height: u32,
     state: Vec<u32>, // see state definitions at the bottom of file to make sense of this.
-    user_input_cache: Vec<u32>,
-    em: entities::EntityManager,
+    pub user_input_cache: Vec<u32>,
+    pub input_index: usize,
+    pub em: entities::EntityManager,
     fnt: FBox<Font>,
     textures: HashMap<String, FBox<Texture>>,
 }
@@ -50,7 +52,7 @@ impl Game {
         let state_vec: Vec<u32> = vec![0; num_elements];
         let user_input_vec: Vec<u32> = vec![0; num_elements];
 
-        Game { window, window_width: w_width, window_height: w_height, state: state_vec, user_input_cache: user_input_vec, em: entities::EntityManager::new(), fnt: font, textures: HashMap::new()}
+        Game { window, window_width: w_width, window_height: w_height, state: state_vec, user_input_cache: user_input_vec, input_index: 0, em: entities::EntityManager::new(), fnt: font, textures: HashMap::new()}
     }
 
     pub fn init(&mut self) {
@@ -272,11 +274,7 @@ impl Game {
         let mut prev_progress = 0.0;
         
         while self.window.is_open() {
-            while let Some(event) = self.window.poll_event() {
-                if let Event::Closed = event {
-                    self.window.close();
-                }
-            }
+            self.cache_user_input();
 
             let elapsed = start_time.elapsed().as_secs_f32();
             let progress = (elapsed % 5.0) / 5.0;

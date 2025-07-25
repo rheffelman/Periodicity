@@ -41,6 +41,7 @@ pub struct EntityManager {
     pub healthbars: HashMap<u32, PHealthbar>,
     pub castbars: HashMap<u32, PCastbar>,
     pub state_vecs: HashMap<u32, PState>,
+    pub tooltip_data: Vec<PTooltipData>,
     entity_id_counter: u32,
 }
 
@@ -55,6 +56,7 @@ impl EntityManager {
             healthbars: HashMap::new(),
             castbars: HashMap::new(),
             state_vecs: HashMap::new(),
+            tooltip_data: Vec::new(),
             entity_id_counter: 0
         }
     }

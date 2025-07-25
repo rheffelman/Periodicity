@@ -16,7 +16,8 @@ pub enum PropertiesEnum {
     stat,
     healthbar,
     castbar,
-    state
+    state,
+    tooltip_data
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -98,4 +99,14 @@ pub struct PCastbar {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PState {
     pub state_vec: Vec<u32>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PTooltipData {
+    pub header: String,
+    pub body: String,
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32
 }
