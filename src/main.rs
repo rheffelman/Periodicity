@@ -2,11 +2,9 @@ use sfml::cpp::FBox;
 use sfml::graphics::{Color, Font, Text, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable};
 use sfml::window::{Event, Style};
 use sfml::window::mouse::Button;
-
 use std::fs;
 use std::mem;
 use serde::{Serialize, Deserialize};
-
 use crate::entities::EntityManager;
 
 mod entities;
@@ -15,18 +13,12 @@ mod systems;
 mod game;
 
 #[link(name = "Advapi32")]
-
 unsafe extern "system" {}
-
 
 fn main() {
     let mut g = game::Game::new(3840, 2160);
     g.init();
     g.run();
-    //let mut em = EntityManager::new();
-    //em.add_entity("player".to_string(), entities::EntityType::Player);
-    //let mut p = em.get_entity_from_string("player").unwrap();
-
 }
 
 // STATE DEFINITIONS
