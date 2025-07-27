@@ -65,9 +65,9 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(w_width: u32, w_height: u32) -> Game {
+    pub fn new() -> Game {
         let mut window = RenderWindow::new(
-            (w_width, w_height),
+            (WINDOW_WIDTH, WINDOW_HEIGHT),
             "Periodicity",
             Style::CLOSE,
             &Default::default(),
@@ -87,8 +87,8 @@ impl Game {
 
         Game {
             window,
-            window_width: w_width,
-            window_height: w_height,
+            window_width: WINDOW_WIDTH,
+            window_height: WINDOW_HEIGHT,
             state: state_vec,
             user_input_cache: user_input_vec,
             input_index: 0,
