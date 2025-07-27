@@ -1,51 +1,122 @@
-use std::collections::HashMap;
-use sfml::audio::listener::position;
-use sfml::cpp::FBox;
-use sfml::graphics::{Color, Font, Text, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable};
-use sfml::graphics::{Texture, Sprite};
-use sfml::window::{Event, Style};
-use sfml::window::mouse::Button;
-use std::time::Instant;
-use std::fs;
-use std::mem;
-use serde::{Serialize, Deserialize};
-use crate::{entities, properties::*};
-use crate::{game::*};
-use std::sync::LazyLock;
-pub static BASE: Color    = Color::rgba(36, 41, 46, 255);
-pub static LIGHTER: Color = Color::rgba(43, 49, 55, 255);
-pub static ENCAPSULATION_REGIONS: Color  = Color::rgba(29, 33, 37, 255);
-pub static BUTTON: Color  = Color::rgba(19, 81, 150, 255);
-pub static BORDER: Color  = Color::rgba(24, 26, 28, 255);
+use sfml::window::{Event};
+use crate::{game::Game, properties::ClickAction};
 
-//use sfml::window::{Event, Key, MouseButton};
+pub enum InputSlot {
+    MouseX = 0,
+    MouseY = 1,
+    LMBCurr = 2,
+    LMBPrev = 3,
+    Count
+}
+
+use InputSlot::*;
+impl InputSlot {
+    pub const fn count() -> usize {
+        InputSlot::Count as usize
+    }
+}
 
 impl Game {
-    pub fn cache_user_input(&mut self) {
+
+    pub fn user_input_main_entry(&mut self) {
+        self.cache_user_input();
+        self.set_hovered_flags();
+        self.dispatch_input_handling();
+
+        self.user_input_cache[LMBPrev as usize] =
+            self.user_input_cache[LMBCurr as usize];
+    }
+
+    fn cache_user_input(&mut self) {
         while let Some(event) = self.window.poll_event() {
-            let code: u32 = match event {
+            match event {
                 Event::Closed => {
                     self.window.close();
-                    0
                 }
-                Event::KeyPressed { code, .. } => 1_000 + code as u32,
-                Event::KeyReleased { code, .. } => 2_000 + code as u32,
-                Event::MouseButtonPressed { button, .. } => 3_000 + button as u32,
-                Event::MouseButtonReleased { button, .. } => 4_000 + button as u32,
                 Event::MouseMoved { x, y } => {
-                    let packed = ((x as u32) & 0xFFFF) | (((y as u32) & 0xFFFF) << 16);
-                    5_000_000 + packed
+                    self.user_input_cache[InputSlot::MouseX as usize] = x as u32;
+                    self.user_input_cache[InputSlot::MouseY as usize] = y as u32;
                 }
-                Event::MouseWheelScrolled { delta, .. } => 6_000 + delta as u32,
-                Event::Resized { width, height } => {
-                    let packed = ((width as u32) & 0xFFFF) | (((height as u32) & 0xFFFF) << 16);
-                    7_000_000 + packed
+                Event::MouseButtonPressed { button, .. } => {
+                    if button == sfml::window::mouse::Button::Left {
+                        self.user_input_cache[LMBCurr as usize] = 1;
+                    }
                 }
-                _ => continue,
-            };
-            let cache_size = self.user_input_cache.len();
-            self.user_input_cache[self.input_index % cache_size] = code;
-            self.input_index += 1;
+                Event::MouseButtonReleased { button, .. } => {
+                    if button == sfml::window::mouse::Button::Left {
+                        self.user_input_cache[LMBCurr as usize] = 0;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+    }
+
+    fn dispatch_input_handling(&mut self) {
+        if self.user_input_cache[LMBCurr as usize] == 1 && self.user_input_cache[LMBPrev as usize] != 1 {
+            self.lmb_pressed();
+        }
+        else if self.user_input_cache[LMBCurr as usize] == 0 && self.user_input_cache[LMBPrev as usize] == 1 {
+            self.lmb_released();
+        }
+    }
+
+    fn set_hovered_flags(&mut self) {
+        let mx = self.user_input_cache[MouseX as usize];
+        let my = self.user_input_cache[MouseY as usize];
+
+        for rects in self.em.rectangles.values_mut() {
+            for rect in rects.iter_mut() {
+                if rect.hovered.is_some() {
+                    rect.hovered = None; // purge previous frame
+                }
+
+                let within_x = mx >= rect.x && mx <= rect.x + rect.width;
+                let within_y = my >= rect.y && my <= rect.y + rect.height;
+
+                if within_x && within_y {
+                    rect.hovered = Some(true);
+                }
+            }
+        }
+    }
+
+    fn lmb_pressed(&mut self) {
+        let mx = self.user_input_cache[MouseX as usize];
+        let my = self.user_input_cache[MouseY as usize];
+        let buttons = self.em.get_all_buttons();
+
+        let mut clicked_eids = vec![];
+        for eid in buttons {
+            if let Some(rect) = self.em.get_button_rect_non_mut(eid) {
+                let within_x = mx >= rect.x && mx <= rect.x + rect.width;
+                let within_y = my >= rect.y && my <= rect.y + rect.height;
+                if within_x && within_y {
+                    clicked_eids.push(eid);
+                }
+            }
+        }
+
+        for eid in clicked_eids {
+            if let Some(cb) = self.em.get_pclickable_non_mut(eid) {
+                self.branch_from_click(cb.action.clone());
+            }
+        }
+    }
+
+    fn lmb_released(&mut self) {
+        let button_ids = self.em.get_all_buttons();
+
+        for eid in button_ids {
+            if let Some(rects) = self.em.get_prects_mut(eid) {
+                for rect in rects.iter_mut() {
+                    if let Some(_) = rect.pressed {
+                        rect.pressed = Some(false);
+                    }
+                }
+            }
         }
     }
 }
+

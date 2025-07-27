@@ -1,0 +1,423 @@
+use crate::game::*;
+use crate::properties::*;
+use crate::animation::Animation;
+use std::fs;
+
+impl Game {
+    pub fn init_main_entry(&mut self) {
+        self.fnt.set_smooth(true);
+        self.create_run_button();
+        self.create_side_buttons();
+        self.spawn_player();
+        self.load_textures("./src/assets/sprites");
+        //self.load_textures("./src/assets/anims");
+        self.animator.add_animation(Animation {
+            name: "Miasma_anim".into(),
+            frame_size: (64, 64),     // width and height of one frame
+            frame_count: 10,           // number of frames in the sprite sheet
+            frame_duration: 0.1,      // duration per frame in seconds
+            looping: true,
+        });
+        self.init_gui();
+        self.init_game();
+    }
+
+    fn create_run_button(&mut self) {
+        let scale = get_scale();
+        let s = |x: u32| x * scale;
+
+        let button_eid = self.em.create_button(Some("run_button".to_string()));
+        let mut rect_id: Option<u32> = None;
+
+        if let Some(rects) = self.em.get_prects_mut(button_eid) {
+            if let Some(rect) = rects.last_mut() {
+                rect.x = s(10);
+                rect.y = s(50);
+                rect.width = s(200);
+                rect.height = s(50);
+                rect.colors = ColorPair::from_colors(BUTTON, MAIN_OUTLINE_CLR);
+                rect.pressed_color = Some(ColorPair::from_colors(BUTTON_PRESSED, MAIN_OUTLINE_CLR));
+                rect.hovered_color = Some(ColorPair::from_colors(BUTTON_HOVERED, MAIN_OUTLINE_CLR));
+                rect.draw = true;
+                rect.hovered = Some(false);
+                rect.strata = 10;
+                rect_id = Some(rect.id);
+            }
+        }
+
+        if let Some(texts) = self.em.get_ptexts_mut(button_eid) {
+            if let Some(text) = texts.last_mut() {
+                text.scale = scale;
+                text.x = s(15);
+                text.y = s(50);
+                text.colors = ColorPair::from_colors(MAIN_TEXT_CLR, MAIN_OUTLINE_CLR);
+                text.draw = true;
+                text.strata = 15;
+            }
+        }
+
+        if let Some(tt) = self.em.get_tooltip_data_mut(button_eid) {
+            tt.header = "Run Code Button".to_string();
+            tt.body = "Runs the code that is currently placed in the text editor section. Be careful! Arbitrary code execution can be dangerous.".to_string();
+            tt.x = s(10);
+            tt.y = s(50);
+            tt.width = s(200);
+            tt.height = s(50);
+            tt.icon = None;
+        }
+
+        if let (Some(id), Some(clickable)) = (rect_id, self.em.get_pclickable_mut(button_eid)) {
+            clickable.clickable = true;
+            clickable.action = ClickAction::RunButton;
+            clickable.rect_reference_id = Some(id);
+        }
+    }
+
+    fn create_side_buttons(&mut self) {
+        let scale = get_scale();
+        let s = |x: u32| x * scale;
+
+        let run_x = s(10);
+        let run_width = s(200);
+        let run_y = s(50);
+        let button_height = s(50);
+
+        let spacing = s(10);
+        let left_x = run_x + run_width + spacing;
+
+        let right_x = if let Some(tb_rects) = self.em.get_prects_by_name("textbox_encap") {
+            if let Some(tb) = tb_rects.last() {
+                tb.x + tb.width
+            } else {
+                left_x + s(400)
+            }
+        } else {
+            left_x + s(400)
+        };
+
+        let total_width = right_x.saturating_sub(left_x);
+        let button_width = total_width / 4;
+
+        let labels = ["A", "B", "C", "D"];
+        let actions = [
+            ClickAction::A,
+            ClickAction::B,
+            ClickAction::C,
+            ClickAction::D,
+        ];
+
+        for (i, (label, action)) in labels.iter().zip(actions.iter()).enumerate() {
+            let eid = self.em.create_button(Some(format!("{}_button", label.to_lowercase())));
+            let button_x = left_x + i as u32 * button_width;
+
+            if let Some(rects) = self.em.get_prects_mut(eid) {
+                if let Some(rect) = rects.last_mut() {
+                    rect.x = button_x;
+                    rect.y = run_y;
+                    rect.width = button_width;
+                    rect.height = button_height;
+                    rect.colors = ColorPair::from_colors(ALT_BUTTON, MAIN_OUTLINE_CLR);
+                    rect.pressed_color = Some(ColorPair::from_colors(BUTTON_PRESSED, MAIN_OUTLINE_CLR));
+                    rect.hovered_color = Some(ColorPair::from_colors(ALT_BUTTON_HOVERED, MAIN_OUTLINE_CLR));
+                    rect.draw = true;
+                    rect.hovered = Some(false);
+                    rect.strata = 10;
+                }
+            }
+
+            if let Some(texts) = self.em.get_ptexts_mut(eid) {
+                if let Some(text) = texts.last_mut() {
+                    text.scale = scale.saturating_sub(1).max(1);
+                    text.x = button_x + s(5);
+                    text.y = run_y;
+                    text.text = label.to_string();
+                    text.colors = ColorPair::from_colors(MAIN_TEXT_CLR, MAIN_OUTLINE_CLR);
+                    text.draw = true;
+                    text.strata = 15;
+                }
+            }
+
+            if let Some(tt) = self.em.get_tooltip_data_mut(eid) {
+                tt.header = label.to_string();
+                tt.body = format!("{} button functionality.", label);
+                tt.x = button_x;
+                tt.y = run_y;
+                tt.width = button_width;
+                tt.height = button_height;
+                tt.icon = None;
+            }
+
+            if let (Some(rect_id), Some(clickable)) = (self.em.get_prects_mut(eid).and_then(|r| r.last()).map(|r| r.id), self.em.get_pclickable_mut(eid)) {
+                clickable.clickable = true;
+                clickable.action = action.clone();
+                clickable.rect_reference_id = Some(rect_id);
+            }
+        }
+    }
+
+
+    fn init_gui(&mut self) {
+        let scale_w = self.window_width as f32 / 1920.0;
+        let scale_h = self.window_height as f32 / 1080.0;
+        let scale = scale_w.min(scale_h).floor().max(1.0) as u32;
+        let s = |x: u32| x * scale;
+
+        let tbid = self.em.add_entity(Some("textbox_encap".to_string()));
+        self.em.add_property_to_entity(PropertiesEnum::Rect, tbid);
+        if let Some(rects) = self.em.rectangles.get_mut(&tbid) {
+            if let Some(rect) = rects.get_mut(0) {
+                rect.width = s(610);
+                rect.height = s(800);
+                rect.x = s(10);
+                rect.y = s(120);
+                rect.colors.fill = (29, 33, 37);
+                rect.colors.outline = (0, 0, 0);
+                rect.draw = true;
+                rect.strata = 10;
+            }
+        }
+
+        let lseid = self.em.add_entity(Some("landscape".to_string()));
+        self.em.add_property_to_entity(PropertiesEnum::Rect, lseid);
+        if let Some(rects) = self.em.rectangles.get_mut(&lseid) {
+            if let Some(rect) = rects.get_mut(0) {
+                rect.width = s(1044);
+                rect.height = s(532);
+                rect.x = s(1920 - 1044) - s(10);
+                rect.y = s(10);
+                rect.colors.fill = (29, 33, 37);
+                rect.colors.outline = (0, 0, 0);
+                rect.draw = true;
+                rect.strata = 5;
+            }
+        }
+
+        self.em.add_property_to_entity(PropertiesEnum::Sprite, lseid);
+        if let Some(spr) = self.em.sprites.get_mut(&lseid) {
+            spr.scale = scale;
+            spr.x = s(1920 - 1024) - s(20);
+            spr.y = s(20);
+            spr.sprite_name = "rainier_background_2".to_string();
+            spr.draw = true;
+            spr.strata = 10;
+        }
+
+        let alpeid = self.em.add_entity(Some("Alpe".to_string()));
+        self.em.add_property_to_entity(PropertiesEnum::Sprite, alpeid);
+        if let Some(spr) = self.em.sprites.get_mut(&alpeid) {
+            spr.scale = scale * 4;
+            spr.x = 3000;
+            spr.y = 420;
+            spr.sprite_name = "Alpe".to_string();
+            spr.draw = true;
+            spr.strata = 15;
+        }
+
+        let ls_overlay_id = self.em.add_entity(Some("landscape_overlay".to_string()));
+        self.em.add_property_to_entity(PropertiesEnum::Sprite, ls_overlay_id);
+        if let Some(spr) = self.em.sprites.get_mut(&ls_overlay_id) {
+            spr.scale = scale;
+            spr.x = s(1920 - 1024) - s(20);
+            spr.y = s(20);
+            spr.sprite_name = "ground_overlay3".to_string();
+            spr.draw = true;
+            spr.strata = 20;
+        }
+
+        let enemy_info_region = self.em.add_entity(Some("enemy_info_region".to_string()));
+        self.em.add_property_to_entity(PropertiesEnum::Rect, enemy_info_region);
+        if let Some(rects) = self.em.rectangles.get_mut(&enemy_info_region) {
+            if let Some(rect) = rects.get_mut(0) {
+                rect.width = s(512);
+                rect.height = s(200);
+                rect.x = s(1920 - 512) - s(10);
+                rect.y = s(532 + 20);
+                rect.colors.fill = (29, 33, 37);
+                rect.colors.outline = (0, 0, 0);
+                rect.draw = true;
+                rect.strata = 10;
+            }
+        }
+
+        self.em.add_property_to_entity(PropertiesEnum::Text, enemy_info_region);
+        if let Some(texts) = self.em.texts.get_mut(&enemy_info_region) {
+            if let Some(text) = texts.get_mut(0) {
+                text.scale = scale;
+                text.x = s(1920 - 510) - s(10);
+                text.y = s(532 + 20);
+                text.colors.fill = (255, 255, 255);
+                text.colors.outline = (0, 0, 0);
+                text.draw = true;
+                text.strata = 10;
+                text.text = "Alpine Terror".to_string();
+            }
+        }
+
+        let tooltip_region = self.em.add_entity(Some("tooltip".to_string()));
+        self.em.add_property_to_entity(PropertiesEnum::Rect, tooltip_region);
+        if let Some(rects) = self.em.rectangles.get_mut(&tooltip_region) {
+            if let Some(rect) = rects.get_mut(0) {
+                rect.width = s(517);
+                rect.height = s(200);
+                rect.x = s(1920 - 1044) - s(10);
+                rect.y = s(532 + 250);
+                rect.colors.fill = (29, 33, 37);
+                rect.colors.outline = (0, 0, 0);
+                rect.draw = true;
+                rect.strata = 10;
+            }
+        }
+    }
+
+    pub fn spawn_player(&mut self) {
+        let scale_w = WINDOW_WIDTH as f32 / 1920.0;
+        let scale_h = WINDOW_HEIGHT as f32 / 1080.0;
+        let scale = scale_w.min(scale_h).floor().max(1.0) as u32;
+        let s = |x: u32| x * scale;
+
+        let player_id = self.em.add_entity(Some("player".to_string()));
+
+        // player sprite
+        self.em.add_property_to_entity(PropertiesEnum::Sprite, player_id);
+        if let Some(sprite) = self.em.get_psprite_mut(player_id) {
+            sprite.x = 2000;
+            sprite.y = 420;
+            sprite.scale = scale * 4;
+            sprite.sprite_name = "my_warlock".into();
+            sprite.draw = true;
+            sprite.strata = 15;
+        }
+
+        // player info background encapsulation region
+        self.em.add_property_to_entity(PropertiesEnum::Rect, player_id);
+        if let Some(rects) = self.em.get_prects_mut(player_id) {
+            if let Some(rect) = rects.first_mut() {
+                rect.width = s(517);
+                rect.height = s(200);
+                rect.x = s(1920 - 1044) - s(10);
+                rect.y = s(532 + 20);
+                rect.colors = ColorPair {fill: (29, 33, 37), outline: (0, 0, 0)};
+                rect.draw = true;
+                rect.strata = 10;
+            }
+        }
+
+        // player info header text
+        self.em.add_property_to_entity(PropertiesEnum::Text, player_id);
+        if let Some(texts) = self.em.get_ptexts_mut(player_id) {
+            if let Some(text) = texts.first_mut() {
+                text.text = "Player Info".into();
+                text.scale = scale;
+                text.x = s(1920 - 1042) - s(10);
+                text.y = s(532 + 20);
+                text.colors = ColorPair {fill: (255, 255, 255), outline: (0, 0, 0)};
+                text.draw = true;
+                text.strata = 10;
+            }
+        }
+        // self.animator.add_animation(Animation {
+        //     name: "Miasma".into(),
+        //     frame_size: (64, 64),
+        //     frame_count: 6,
+        //     frame_duration: 0.15, // default, we’ll override during playback
+        //     looping: false,
+        // });
+
+        // initial stats
+        // self.em.add_property_to_entity(PropertiesEnum::Stat, player_id);
+        // if let Some(stats) = self.em.get_pstats_mut(player_id) {
+        //     stats.health_max = 100;
+        //     stats.health_curr = 70;
+        //     stats.chaos = 1;
+        //     stats.solidity = 1;
+        //     stats.vitality = 1;
+        //     stats.haste = 1;
+        //     stats.will = 1;
+        //     stats.volatility = 1;
+        // }
+
+        // === HEALTHBAR ===
+        self.em.add_property_to_entity(PropertiesEnum::Healthbar, player_id);
+        if let Some(hb) = self.em.get_phealthbar_mut(player_id) {
+            hb.x = s(1920) - s(1047);
+            hb.y = s(532 + 60);
+            hb.width = s(502);
+            hb.height = s(50);
+            hb.draw = true;
+            hb.strata = 30;
+            hb.base_colors = ColorPair {
+                fill: (64, 64, 64),
+                outline: (0, 0, 0),
+            };
+            hb.inner_colors = ColorPair {
+                fill: (255, 100, 100),
+                outline: (0, 0, 0),
+            };
+        }
+
+        // === CASTBAR ===
+        self.em.add_property_to_entity(PropertiesEnum::Castbar, player_id);
+        if let Some(cb) = self.em.get_pcastbar_mut(player_id) {
+            cb.x = s(1920) - s(1047);
+            cb.y = s(532 + 120);
+            cb.width = s(452);
+            cb.height = s(50);
+            cb.cast_progress = 0.8;
+            cb.draw = true;
+            cb.strata = 30;
+            cb.base_colors = ColorPair {
+                fill: (64, 64, 64),
+                outline: (0, 0, 0),
+            };
+            cb.inner_colors = ColorPair {
+                fill: (100, 100, 255),
+                outline: (0, 0, 0),
+            };
+            cb.icon_name = "miasma".into();
+        }
+
+        // === TOOLTIP ===
+        self.em.add_property_to_entity(PropertiesEnum::TooltipData, player_id);
+        if let Some(tt) = self.em.get_tooltip_data_mut(player_id) {
+            tt.header = "Miasma".into();
+            tt.body = "    A contagious metaphysical impurity. \nSpreads to any nearby enemies each time it \ndeals damage, haste does not affect its \ntickrate.".into();
+            tt.x = s(1920) - s(1047);
+            tt.y = s(532 + 120);
+            tt.width = s(502);
+            tt.height = s(50);
+            tt.icon = Some("miasma".into());
+        }
+
+        // === STATE ===
+        self.em.add_property_to_entity(PropertiesEnum::State, player_id);
+    }
+
+    fn load_textures(&mut self, folder_path: &str) {
+        let entries = fs::read_dir(folder_path)
+            .expect("Failed to read sprites folder");
+
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        if ext == "png" || ext == "jpg" || ext == "jpeg" {
+                            let path_str = path.to_str().unwrap();
+                            let file_name = path.file_stem().unwrap().to_str().unwrap().to_string();
+
+                            match sfml::graphics::Texture::from_file(path_str) {
+                                Ok(texture) => {
+                                    self.textures.insert(file_name, texture);
+                                    println!("Loaded texture: {}", path_str);
+                                }
+                                Err(err) => {
+                                    eprintln!("Failed to load texture {}: {:?}", path_str, err);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

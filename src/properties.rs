@@ -1,23 +1,21 @@
-use sfml::cpp::FBox;
-use sfml::graphics::glsl::Vec3;
-use sfml::graphics::{Color, Font, Text, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable};
-use sfml::window::{Event, Style};
-use sfml::window::mouse::Button;
-
-use std::fs;
-use std::mem;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PropertiesEnum {
-    rect,
-    text,
-    sprite,
-    stat,
-    healthbar,
-    castbar,
-    state,
-    tooltip_data
+    Rect,
+    Text,
+    Sprite,
+    Healthbar,
+    Castbar,
+    State,
+    TooltipData,
+    Clickable,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct PId { // each entity must have 1 and only 1 PId
+    pub id: u32,
+    pub tag: String // will be specified for you if not specified.
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -25,20 +23,34 @@ pub struct ColorPair {
     pub fill: (u8, u8, u8),
     pub outline: (u8, u8, u8),
 }
+impl ColorPair {
+    pub fn from_colors(fill: sfml::graphics::Color, outline: sfml::graphics::Color) -> Self {
+        ColorPair {
+            fill: (fill.r, fill.g, fill.b),
+            outline: (outline.r, outline.g, outline.b),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PRect {
+    pub id: u32,
     pub x: u32,
     pub y: u32,
     pub width: u32,
     pub height: u32,
     pub colors: ColorPair,
+    pub pressed_color: Option<ColorPair>,
+    pub hovered_color: Option<ColorPair>,
+    pub pressed: Option<bool>,
+    pub hovered: Option<bool>,
     pub draw: bool,
-    pub strata: u8
+    pub strata: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PText {
+    pub id: u32,
     pub text: String,
     pub scale: u32,
     pub x: u32,
@@ -50,28 +62,19 @@ pub struct PText {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PSprite {
+    pub id: u32,
     pub x: u32,
     pub y: u32,
     pub scale: u32,
     pub sprite_name: String,
+    pub anim_name: Option<String>,
     pub draw: bool,
     pub strata: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct PStats {
-    pub health_max: u32,
-    pub health_curr: u32,
-    pub chaos: u32,
-    pub solidity: u32,
-    pub vitality: u32,
-    pub haste: u32,
-    pub will: u32,
-    pub volatility: u32
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PHealthbar {
+    pub id: u32,
     pub x: u32,
     pub y: u32,
     pub width: u32,
@@ -84,6 +87,7 @@ pub struct PHealthbar {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PCastbar {
+    pub id: u32,
     pub x: u32,
     pub y: u32,
     pub width: u32,
@@ -98,15 +102,36 @@ pub struct PCastbar {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PState {
+    pub id: u32,
     pub state_vec: Vec<u32>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PTooltipData {
+    pub id: u32,
     pub header: String,
     pub body: String,
     pub x: u32,
     pub y: u32,
     pub width: u32,
-    pub height: u32
+    pub height: u32,
+    pub icon: Option<String>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct PClickable {
+    pub id: u32,
+    pub clickable: bool,
+    pub rect_reference_id: Option<u32>,
+    pub action: ClickAction,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum ClickAction {
+    RunButton,
+    OtherButton,
+    A,
+    B,
+    C,
+    D,
 }
