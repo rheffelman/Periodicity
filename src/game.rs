@@ -29,8 +29,9 @@ pub static MAIN_TEXT_CLR: Color = Color::rgba(246,248,250,255);
 pub static OFF_TEXT_CLR: Color = Color::rgba(101,126,150,255);
 pub static MIASMA_COLOR: Color = Color::rgba(125,185,112,255);
 pub static INFERNUM_COLOR: Color = Color::rgba(233,103,6,255);
-pub static WINDOW_WIDTH: u32 = 3840;
-pub static WINDOW_HEIGHT: u32  = 2160;
+
+pub static WINDOW_WIDTH: u32 = 1920;
+pub static WINDOW_HEIGHT: u32  = 1080;
 
 pub fn get_scale() -> u32 {
     let scale_w = WINDOW_WIDTH as f32 / 1920.0;

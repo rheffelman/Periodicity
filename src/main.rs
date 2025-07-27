@@ -16,7 +16,7 @@ mod animation;
 unsafe extern "system" {}
 
 fn main() {
-    let mut g = game::Game::new(3840, 2160);
+    let mut g = game::Game::new(1920, 1080);
     g.init_main_entry();
     g.run();
 }

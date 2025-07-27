@@ -23,6 +23,7 @@ impl Game {
     }
 
     fn create_run_button(&mut self) {
+        
         let scale = get_scale();
         let s = |x: u32| x * scale;
 
