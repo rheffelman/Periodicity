@@ -1,112 +1,188 @@
 use std::collections::HashMap;
-use sfml::graphics::{Sprite, IntRect};
-
-#[derive(Debug, Clone)]
-pub struct Animation {
-    pub name: String,
-    pub frame_size: (i32, i32), // (width, height)
-    pub frame_count: usize,
-    pub frame_duration: f32, // seconds per frame
-    pub looping: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct AnimationState {
-    pub current_frame: usize,
-    pub timer: f32,
-    pub frame_duration: f32,
-    pub is_finished: bool,
-}
-
-impl AnimationState {
-    pub fn new() -> Self {
-        Self {
-            current_frame: 0,
-            timer: 0.0,
-            frame_duration: 0.1,
-            is_finished: false,
-        }
-    }
-
-    pub fn reset(&mut self) {
-        self.current_frame = 0;
-        self.timer = 0.0;
-        self.is_finished = false;
-    }
-}
+use std::hash::Hash;
+use sfml::graphics::*;
+use sfml::cpp::*;
+use std::fs;
 #[derive(Debug)]
-pub struct Animator {
-    animations: HashMap<String, Animation>,
-    states: HashMap<String, AnimationState>,
+pub struct AnimatedSprite {
+    pub texture_id: String,
+    pub frame_width: u32,
+    pub frame_height: u32,
+    pub total_frames: u32,
+    pub current_frame: u32,
+    pub frame_time: f32,
+    pub time_accumulator: f32,
+    pub position: (u32, u32),
+    pub inanimate: bool,
+    pub strata: u32,
+    pub desired_width: Option<u32>,
+    pub desired_height: Option<u32>,
+    pub play_once: bool,
+    pub finished: bool,
+    pub velocity: (f32, f32),
+    pub lifetime: Option<f32>,
 }
 
-impl Animator {
+
+#[derive(Debug)]
+pub struct Animation {
+    pub textures: HashMap<String, FBox<Texture>>,
+    pub active: Vec<AnimatedSprite>,
+}
+
+impl Animation {
     pub fn new() -> Self {
-        Self {
-            animations: HashMap::new(),
-            states: HashMap::new(),
+        Animation {
+            textures: HashMap::new(),
+            active: Vec::new(),
         }
     }
 
-    pub fn add_animation(&mut self, anim: Animation) {
-        self.states.insert(anim.name.clone(), AnimationState::new());
-        self.animations.insert(anim.name.clone(), anim);
+    pub fn load_texture(&mut self, id: &str, filepath: &str) {
+        let tex = Texture::from_file(filepath).expect("Failed to load texture");
+        self.textures.insert(id.to_string(), tex);
     }
 
-    pub fn update(&mut self, delta_time: f32) {
-        for (name, state) in self.states.iter_mut() {
-            if let Some(anim) = self.animations.get(name) {
-                if state.is_finished && !anim.looping {
-                    continue;
+    pub fn add_animation_instance(&mut self, sprite: AnimatedSprite) {
+        self.active.push(sprite);
+    }
+
+    pub fn remove_sprite_by_texture(&mut self, texture_id: &str) {
+        self.active.retain(|sprite| sprite.texture_id != texture_id);
+    }
+
+    pub fn update(&mut self, dt: f32) {
+        for sprite in &mut self.active {
+            // kill dead animations
+            if let Some(ttl) = sprite.lifetime.as_mut() {
+                *ttl -= dt;
+                if *ttl <= 0.0 {
+                    sprite.finished = true;
+                }
+            }
+            // Movement
+            let (vx, vy) = sprite.velocity;
+            let (x, y) = sprite.position;
+            let new_x = (x as f32 + vx * dt).round().max(0.0) as u32;
+            let new_y = (y as f32 + vy * dt).round().max(0.0) as u32;
+            sprite.position = (new_x, new_y);
+
+            if sprite.inanimate || sprite.finished {
+                continue;
+            }
+
+            // Animation
+            sprite.time_accumulator += dt;
+            if sprite.time_accumulator >= sprite.frame_time {
+                sprite.time_accumulator -= sprite.frame_time;
+
+                if sprite.current_frame + 1 >= sprite.total_frames {
+                    if sprite.play_once {
+                        sprite.finished = true;
+                    } else {
+                        sprite.current_frame = 0;
+                    }
+                } else {
+                    sprite.current_frame += 1;
+                }
+            }
+        }
+        self.active.retain(|sprite| !(sprite.lifetime.is_some() && sprite.finished));
+
+    }
+
+    pub fn get_drawables(&self) -> Vec<Sprite> {
+        let mut sorted_sprites: Vec<&AnimatedSprite> = self.active.iter().collect();
+        sorted_sprites.sort_by_key(|sprite| sprite.strata);
+
+        let mut drawables = Vec::new();
+
+        for sprite_data in sorted_sprites {
+            if let Some(texture) = self.textures.get(&sprite_data.texture_id) {
+                let mut sprite = Sprite::with_texture(texture);
+
+                let frame_x = (sprite_data.current_frame * sprite_data.frame_width) as i32;
+                let frame_y = 0;
+
+                sprite.set_texture_rect(IntRect::new(
+                    frame_x,
+                    frame_y,
+                    sprite_data.frame_width as i32,
+                    sprite_data.frame_height as i32,
+                ));
+
+                sprite.set_position((
+                    sprite_data.position.0 as f32,
+                    sprite_data.position.1 as f32,
+                ));
+
+                if let (Some(dw), Some(dh)) = (
+                    sprite_data.desired_width,
+                    sprite_data.desired_height,
+                ) {
+                    let scale_x = dw as f32 / sprite_data.frame_width as f32;
+                    let scale_y = dh as f32 / sprite_data.frame_height as f32;
+                    sprite.set_scale((scale_x, scale_y));
                 }
 
-                state.timer += delta_time;
-                while state.timer >= state.frame_duration {
-                    state.timer -= state.frame_duration;
-                    state.current_frame += 1;
+                drawables.push(sprite);
+            }
+        }
+        drawables
+    }
 
-                    if state.current_frame >= anim.frame_count {
-                        if anim.looping {
-                            state.current_frame = 0;
-                        } else {
-                            state.current_frame = anim.frame_count - 1;
-                            state.is_finished = true;
-                            break;
+    pub fn get_drawable(&self, aspr: &AnimatedSprite) -> Option<Sprite> {
+        let texture = self.textures.get(&aspr.texture_id)?;
+
+        let mut sprite = Sprite::with_texture(texture);
+
+        let frame_x = (aspr.current_frame * aspr.frame_width) as i32;
+        let frame_y = 0;
+
+        sprite.set_texture_rect(IntRect::new(
+            frame_x,
+            frame_y,
+            aspr.frame_width as i32,
+            aspr.frame_height as i32,
+        ));
+
+        sprite.set_position((aspr.position.0 as f32, aspr.position.1 as f32));
+
+        if let (Some(dw), Some(dh)) = (aspr.desired_width, aspr.desired_height) {
+            let scale_x = dw as f32 / aspr.frame_width as f32;
+            let scale_y = dh as f32 / aspr.frame_height as f32;
+            sprite.set_scale((scale_x, scale_y));
+        }
+
+        Some(sprite)
+    }
+
+    pub fn load_textures(&mut self, folder_path: &str) {
+        let entries = fs::read_dir(folder_path)
+            .expect("Failed to read sprites folder");
+
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        if ext == "png" || ext == "jpg" || ext == "jpeg" {
+                            let path_str = path.to_str().unwrap();
+                            let file_name = path.file_stem().unwrap().to_str().unwrap().to_string();
+
+                            match sfml::graphics::Texture::from_file(path_str) {
+                                Ok(texture) => {
+                                    self.textures.insert(file_name, texture);
+                                    println!("Loaded texture: {}", path_str);
+                                }
+                                Err(err) => {
+                                    eprintln!("Failed to load texture {}: {:?}", path_str, err);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-    }
-
-    pub fn apply_to_sprite(&self, anim_name: &str, sprite: &mut Sprite) {
-        if let Some(anim) = self.animations.get(anim_name) {
-            if let Some(state) = self.states.get(anim_name) {
-                let frame_x = (state.current_frame as i32 * anim.frame_size.0) as i32;
-                let rect = IntRect::new(
-                    frame_x,
-                    0,
-                    anim.frame_size.0,
-                    anim.frame_size.1,
-                );
-                sprite.set_texture_rect(rect);
-            }
-        }
-    }
-
-    pub fn set_custom_frame_duration(&mut self, anim_name: &str, frame_duration: f32) {
-        if let Some(state) = self.states.get_mut(anim_name) {
-            state.frame_duration = frame_duration;
-        }
-    }
-
-    pub fn reset(&mut self, anim_name: &str) {
-        if let Some(state) = self.states.get_mut(anim_name) {
-            state.reset();
-        }
-    }
-
-    pub fn is_finished(&self, anim_name: &str) -> bool {
-        self.states.get(anim_name).map_or(false, |s| s.is_finished)
     }
 }

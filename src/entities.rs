@@ -8,7 +8,6 @@ pub struct EntityManager {
     pub ids: HashMap<u32, PId>,                   // 1..1
     pub rectangles: HashMap<u32, Vec<PRect>>,     // 0..n
     pub texts: HashMap<u32, Vec<PText>>,          // 0..n
-    pub sprites: HashMap<u32, PSprite>,           // 0..1
     pub healthbars: HashMap<u32, PHealthbar>,     // 0..1
     pub castbars: HashMap<u32, PCastbar>,         // 0..1
     pub state_vecs: HashMap<u32, PState>,         // 0..1
@@ -25,7 +24,6 @@ impl EntityManager {
             ids: HashMap::new(),
             rectangles: HashMap::new(),
             texts: HashMap::new(),
-            sprites: HashMap::new(),
             healthbars: HashMap::new(),
             castbars: HashMap::new(),
             state_vecs: HashMap::new(),
@@ -60,7 +58,6 @@ impl EntityManager {
         match prop {
             PropertiesEnum::Rect => self.add_rect(id),
             PropertiesEnum::Text => self.add_text(id),
-            PropertiesEnum::Sprite => self.add_sprite(id),
             PropertiesEnum::Healthbar => self.add_healthbar(id),
             PropertiesEnum::Castbar => self.add_castbar(id),
             PropertiesEnum::State => self.add_state(id),
@@ -96,20 +93,6 @@ impl EntityManager {
             x: 50,
             y: 50,
             colors: ColorPair { fill: (255, 255, 255), outline: (0, 0, 0) },
-            draw: false,
-            strata: 0,
-        });
-    }
-
-    fn add_sprite(&mut self, id: u32) {
-        let pid = self.next_pid();
-        self.sprites.insert(id, PSprite {
-            id: pid,
-            x: 10,
-            y: 10,
-            scale: 1,
-            sprite_name: "goosey".to_string(),
-            anim_name: None,
             draw: false,
             strata: 0,
         });
@@ -188,10 +171,6 @@ impl EntityManager {
         self.texts.get_mut(&id)
     }
 
-    pub fn get_psprite_mut(&mut self, id: u32) -> Option<&mut PSprite> {
-        self.sprites.get_mut(&id)
-    }
-
     pub fn get_phealthbar_mut(&mut self, id: u32) -> Option<&mut PHealthbar> {
         self.healthbars.get_mut(&id)
     }
@@ -222,10 +201,6 @@ impl EntityManager {
 
     pub fn get_ptexts_non_mut(&self, id: u32) -> Option<&Vec<PText>> {
         self.texts.get(&id)
-    }
-
-    pub fn get_psprite_non_mut(&self, id: u32) -> Option<&PSprite> {
-        self.sprites.get(&id)
     }
 
     pub fn get_phealthbar_non_mut(&self, id: u32) -> Option<&PHealthbar> {
@@ -293,6 +268,7 @@ impl EntityManager {
             })
             .collect()
     }
+
     pub fn get_button_rect_mut(&mut self, entity_id: u32) -> Option<&mut PRect> {
         let rect_id = self.clickables.get(&entity_id)?.rect_reference_id?;
         let rects = self.rectangles.get_mut(&entity_id)?;

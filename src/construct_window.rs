@@ -1,6 +1,6 @@
+use crate::animation::AnimatedSprite;
 use crate::game::*;
 use crate::properties::*;
-use crate::animation::Animation;
 use std::fs;
 
 impl Game {
@@ -9,21 +9,13 @@ impl Game {
         self.create_run_button();
         self.create_side_buttons();
         self.spawn_player();
-        self.load_textures("./src/assets/sprites");
-        //self.load_textures("./src/assets/anims");
-        self.animator.add_animation(Animation {
-            name: "Miasma_anim".into(),
-            frame_size: (64, 64),     // width and height of one frame
-            frame_count: 10,           // number of frames in the sprite sheet
-            frame_duration: 0.1,      // duration per frame in seconds
-            looping: true,
-        });
+        self.anims.load_textures("./src/assets/sprites");
+        //self.load_textures("./src/assets/sprites");
         self.init_gui();
         self.init_game();
     }
 
     fn create_run_button(&mut self) {
-        
         let scale = get_scale();
         let s = |x: u32| x * scale;
 
@@ -118,7 +110,7 @@ impl Game {
                     rect.width = button_width;
                     rect.height = button_height;
                     rect.colors = ColorPair::from_colors(ALT_BUTTON, MAIN_OUTLINE_CLR);
-                    rect.pressed_color = Some(ColorPair::from_colors(BUTTON_PRESSED, MAIN_OUTLINE_CLR));
+                    rect.pressed_color = Some(ColorPair::from_colors(ALT_BUTTON_PRESSED, MAIN_OUTLINE_CLR));
                     rect.hovered_color = Some(ColorPair::from_colors(ALT_BUTTON_HOVERED, MAIN_OUTLINE_CLR));
                     rect.draw = true;
                     rect.hovered = Some(false);
@@ -192,38 +184,63 @@ impl Game {
                 rect.strata = 5;
             }
         }
+        // forest background sprite
+        self.anims.add_animation_instance(AnimatedSprite {
+            texture_id: "rainier_background_2".to_string(),
+            frame_width: 1024,
+            frame_height: 512,
+            total_frames: 1,
+            current_frame: 0,
+            frame_time: 9999.0,
+            time_accumulator: 0.0,
+            position: (s(1920 - 1044) , s(20)),
+            inanimate: true,
+            strata: 5,
+            desired_width: Some(s(1024)),
+            desired_height: Some(s(512)),
+            play_once: false,
+            finished: false,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
 
-        self.em.add_property_to_entity(PropertiesEnum::Sprite, lseid);
-        if let Some(spr) = self.em.sprites.get_mut(&lseid) {
-            spr.scale = scale;
-            spr.x = s(1920 - 1024) - s(20);
-            spr.y = s(20);
-            spr.sprite_name = "rainier_background_2".to_string();
-            spr.draw = true;
-            spr.strata = 10;
-        }
+        self.anims.add_animation_instance(AnimatedSprite {
+            texture_id: "Alpe".to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            total_frames: 1,
+            current_frame: 0,
+            frame_time: 9999.0,
+            time_accumulator: 0.0,
+            position: (s(1500) , s(207)),
+            inanimate: true,
+            strata: 10,
+            desired_width: Some(s(256)),
+            desired_height: Some(s(256)),
+            play_once: false,
+            finished: true,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
 
-        let alpeid = self.em.add_entity(Some("Alpe".to_string()));
-        self.em.add_property_to_entity(PropertiesEnum::Sprite, alpeid);
-        if let Some(spr) = self.em.sprites.get_mut(&alpeid) {
-            spr.scale = scale * 4;
-            spr.x = 3000;
-            spr.y = 420;
-            spr.sprite_name = "Alpe".to_string();
-            spr.draw = true;
-            spr.strata = 15;
-        }
-
-        let ls_overlay_id = self.em.add_entity(Some("landscape_overlay".to_string()));
-        self.em.add_property_to_entity(PropertiesEnum::Sprite, ls_overlay_id);
-        if let Some(spr) = self.em.sprites.get_mut(&ls_overlay_id) {
-            spr.scale = scale;
-            spr.x = s(1920 - 1024) - s(20);
-            spr.y = s(20);
-            spr.sprite_name = "ground_overlay3".to_string();
-            spr.draw = true;
-            spr.strata = 20;
-        }
+        self.anims.add_animation_instance(AnimatedSprite {
+            texture_id: "ground_overlay3".to_string(),
+            frame_width: 1024,
+            frame_height: 512,
+            total_frames: 1,
+            current_frame: 0,
+            frame_time: 9999.0,
+            time_accumulator: 0.0,
+            position: (s(1920 - 1044) , s(20)),
+            inanimate: true,
+            strata: 10,
+            desired_width: Some(s(1024)),
+            desired_height: Some(s(512)),
+            play_once: false,
+            finished: true,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
 
         let enemy_info_region = self.em.add_entity(Some("enemy_info_region".to_string()));
         self.em.add_property_to_entity(PropertiesEnum::Rect, enemy_info_region);
@@ -278,16 +295,24 @@ impl Game {
 
         let player_id = self.em.add_entity(Some("player".to_string()));
 
-        // player sprite
-        self.em.add_property_to_entity(PropertiesEnum::Sprite, player_id);
-        if let Some(sprite) = self.em.get_psprite_mut(player_id) {
-            sprite.x = 2000;
-            sprite.y = 420;
-            sprite.scale = scale * 4;
-            sprite.sprite_name = "my_warlock".into();
-            sprite.draw = true;
-            sprite.strata = 15;
-        }
+        self.anims.add_animation_instance(AnimatedSprite {
+            texture_id: "my_warlock".to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            total_frames: 1,
+            current_frame: 0,
+            frame_time: 9999.0,
+            time_accumulator: 0.0,
+            position: (s(1000) , s(207)),
+            inanimate: true,
+            strata: 10,
+            desired_width: Some(s(256)),
+            desired_height: Some(s(256)),
+            play_once: true,
+            finished: false,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
 
         // player info background encapsulation region
         self.em.add_property_to_entity(PropertiesEnum::Rect, player_id);

@@ -13,7 +13,6 @@ use crate::helpers::*;
 enum DrawableItem {
     Rect(PRect),
     Text(PText),
-    Sprite(PSprite),
     Healthbar(PHealthbar),
     Castbar(PCastbar),
 }
@@ -30,6 +29,7 @@ impl Game {
         }
         self.render_player_castbar();
         self.render_tooltips();
+        self.handle_sprites();
         self.window.display();
     }
 
@@ -37,7 +37,6 @@ impl Game {
         match drawable {
             DrawableItem::Rect(rect) => self.render_rect(&rect),
             DrawableItem::Text(text) => self.render_text(&text),
-            DrawableItem::Sprite(sprite) => self.render_sprite(&sprite),
             DrawableItem::Healthbar(hb) => self.render_healthbar(&hb),
             DrawableItem::Castbar(cb) => self.render_castbar(&cb),
         }
@@ -54,18 +53,11 @@ impl Game {
             }
         }
 
-
         for (_id, text_list) in &self.em.texts {
             for text in text_list {
                 if text.draw {
                     draw_list.push((text.strata, DrawableItem::Text(text.clone())));
                 }
-            }
-        }
-
-        for sprite in self.em.sprites.values() {
-            if sprite.draw {
-                draw_list.push((sprite.strata, DrawableItem::Sprite(sprite.clone())));
             }
         }
 
@@ -75,14 +67,15 @@ impl Game {
             }
         }
 
-        // for castbar in self.em.castbars.values() {
-        //     if castbar.draw {
-        //         draw_list.push((castbar.strata, DrawableItem::Castbar(castbar.clone())));
-        //     }
-        // }
-
         draw_list.sort_by_key(|(strata, _)| *strata);
         draw_list
+    }
+
+    fn handle_sprites(&mut self) {
+        let sprs = self.anims.get_drawables();
+        for spr in sprs {
+            self.window.draw(&spr);
+        }
     }
 
     fn render_tooltips(&mut self) {
@@ -184,20 +177,6 @@ impl Game {
         draw_text.set_outline_color(Color::rgb(text.colors.outline.0, text.colors.outline.1, text.colors.outline.2));
         draw_text.set_outline_thickness(1.0);
         self.window.draw(&draw_text);
-    }
-
-    fn render_sprite(&mut self, sprite: &PSprite) {
-        if let Some(texture) = self.textures.get(&sprite.sprite_name) {
-            let mut draw_sprite = Sprite::with_texture(&**texture);
-            draw_sprite.set_position((sprite.x as f32, sprite.y as f32));
-            draw_sprite.set_scale(sprite.scale as f32);
-
-            if let Some(anim_name) = &sprite.anim_name {
-                self.animator.apply_to_sprite(anim_name, &mut draw_sprite);
-            }
-
-            self.window.draw(&draw_sprite);
-        }
     }
 
     fn render_healthbar(&mut self, healthbar: &PHealthbar) {
@@ -307,21 +286,7 @@ impl Game {
         self.window.draw(&inner_rect);
 
         // spell icon
-        if let Some(texture) = self.textures.get(&current_action.action_tag) {
-            let mut icon_sprite = Sprite::with_texture(&**texture);
 
-            let icon_size = castbar.height as f32;
-            let tex_size = texture.size();
-            let scale_x = icon_size / tex_size.x as f32;
-            let scale_y = icon_size / tex_size.y as f32;
-            icon_sprite.set_scale((scale_x, scale_y));
-
-            let icon_x = castbar.x as f32 + castbar.width as f32;
-            let icon_y = castbar.y as f32;
-            icon_sprite.set_position((icon_x, icon_y));
-
-            self.window.draw(&icon_sprite);
-        }
     }
 
     fn render_player_castbar(&mut self) {
@@ -339,8 +304,8 @@ impl Game {
         current_action.time_remaining =
             current_action.time_remaining.saturating_sub(dt_ms);
 
-        println!("{}", current_action.time_remaining);
-        println!("{}", current_action.action_tag);
+        // println!("{}", current_action.time_remaining);
+        // println!("{}", current_action.action_tag);
         if current_action.time_remaining == 0 {
             queue.queue.remove(0);
             return;
@@ -388,20 +353,33 @@ impl Game {
         self.window.draw(&inner_rect);
 
         // spell icon
-        if let Some(texture) = self.textures.get(&current_action.action_tag) {
-            let mut icon_sprite = Sprite::with_texture(&**texture);
-
-            let icon_size = castbar.height as f32;
+        if let Some(texture) = self.anims.textures.get(&current_action.action_tag) {
             let tex_size = texture.size();
-            let scale_x = icon_size / tex_size.x as f32;
-            let scale_y = icon_size / tex_size.y as f32;
-            icon_sprite.set_scale((scale_x, scale_y));
+            let icon_size = castbar.height;
 
-            let icon_x = castbar.x as f32 + castbar.width as f32;
-            let icon_y = castbar.y as f32;
-            icon_sprite.set_position((icon_x, icon_y));
+            // Create a temporary AnimatedSprite descriptor
+            let aspr = crate::animation::AnimatedSprite {
+                texture_id: current_action.action_tag.clone(),
+                frame_width: tex_size.x,
+                frame_height: tex_size.y,
+                total_frames: 1,
+                current_frame: 0,
+                frame_time: 9999.0,
+                time_accumulator: 0.0,
+                position: (castbar.x + castbar.width, castbar.y),
+                inanimate: true,
+                strata: 9999, // rendered last
+                desired_width: Some(icon_size),
+                desired_height: Some(icon_size),
+                play_once: false,
+                finished: false,
+                velocity: (0.0, 0.0),
+                lifetime: None,
+            };
 
-            self.window.draw(&icon_sprite);
+            if let Some(sprite) = self.anims.get_drawable(&aspr) {
+                self.window.draw(&sprite);
+            }
         }
     }
 }

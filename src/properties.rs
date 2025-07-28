@@ -4,7 +4,6 @@ use serde::{Serialize, Deserialize};
 pub enum PropertiesEnum {
     Rect,
     Text,
-    Sprite,
     Healthbar,
     Castbar,
     State,
@@ -58,18 +57,6 @@ pub struct PText {
     pub colors: ColorPair,
     pub draw: bool,
     pub strata: u8
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct PSprite {
-    pub id: u32,
-    pub x: u32,
-    pub y: u32,
-    pub scale: u32,
-    pub sprite_name: String,
-    pub anim_name: Option<String>,
-    pub draw: bool,
-    pub strata: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

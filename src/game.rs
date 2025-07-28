@@ -7,11 +7,11 @@ use sfml::graphics::{Color, Font, Texture, RenderWindow};
 use sfml::graphics::{Text, RectangleShape, Sprite, RenderTarget, Transformable, Shape};
 use sfml::window::{Style};
 
+use crate::animation::Animation;
 use crate::{entities, g_entities};
 use crate::properties::*;
 use crate::user_input::*;
 use crate::construct_window::*;
-use crate::animation::Animator;
 
 pub static BASE: Color    = Color::rgba(36, 41, 46, 255);
 pub static LIGHTER: Color = Color::rgba(43, 49, 55, 255);
@@ -20,7 +20,8 @@ pub static BUTTON: Color  = Color::rgba(4,66,137,255);
 pub static BUTTON_PRESSED: Color = Color::rgba(127,184,251,255);
 pub static BUTTON_HOVERED: Color = Color::rgba(0,92,197,255);
 pub static ALT_BUTTON: Color = Color::rgba(243,88,2,255);
-pub static ALT_BUTTON_HOVERED: Color = Color::rgba(239, 157, 112, 255);
+pub static ALT_BUTTON_HOVERED: Color = Color::rgba(243, 103, 25, 255);
+pub static ALT_BUTTON_PRESSED: Color = Color::rgba(239, 157, 112, 255);
 pub static MAIN_OUTLINE_CLR: Color  = Color::rgba(24, 26, 28, 255);
 pub static OFF_OUTLINE_CLR: Color = Color::rgba(107,117,127,255);
 pub static LEGENDARY: Color = Color::rgba(250,214,104,255);
@@ -56,12 +57,13 @@ pub struct Game {
     pub em_gem_link: HashMap<u32, u32>,
     pub fnt: FBox<Font>,
     pub textures: HashMap<String, FBox<Texture>>,
-    pub animator: Animator,
+    pub anims: Animation,
 
     pub time_elapsed: f32,    // total time in seconds (float)
     pub delta_time: f32,      // delta time in seconds (float)
     pub time_elapsed_ms: u64, // total time in milliseconds (int)
     last_frame_time: Instant,
+    pub miasma_has_spawned: bool,
 }
 
 impl Game {
@@ -97,12 +99,13 @@ impl Game {
             em_gem_link: HashMap::new(),
             fnt: font,
             textures: HashMap::new(),
-            animator: Animator::new(),
+            anims: Animation::new(),
 
             time_elapsed: 0.0,
             delta_time: 0.0,
             time_elapsed_ms: 0,
             last_frame_time: Instant::now(),
+            miasma_has_spawned: false,
         }
     }
 
@@ -124,9 +127,9 @@ impl Game {
                 castbar.cast_progress = progress;
             }
             
-            self.animator.update(self.delta_time);
             self.render_main_entry();
             self.update_game_main_entry();
+            self.anims.update(self.delta_time);
         }
     }
 }

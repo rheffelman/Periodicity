@@ -59,6 +59,32 @@ impl Game {
         self.gem.actions.insert(player_id, a.clone());
         println!("Miasma added to action queue");
         self.gem.actionqueue.get_mut(&player_id).unwrap().queue.push(a);
+
+        let scale_w = WINDOW_WIDTH as f32 / 1920.0;
+        let scale_h = WINDOW_HEIGHT as f32 / 1080.0;
+        let scale = scale_w.min(scale_h).floor().max(1.0) as u32;
+        let s = |x: u32| x * scale;
+
+        self.anims.remove_sprite_by_texture("my_warlock");
+        self.anims.remove_sprite_by_texture("Miasma_anim2");
+        self.anims.add_animation_instance(crate::animation::AnimatedSprite {
+            texture_id: "Miasma_anim2".to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            total_frames: 12,
+            current_frame: 0,
+            frame_time: 0.2,
+            time_accumulator: 0.0,
+            position: (s(1000) , s(207)),
+            inanimate: false,
+            strata: 20,
+            desired_width: Some(s(256)),
+            desired_height: Some(s(256)),
+            play_once: true,
+            finished: false,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
     }
 
     fn handle_b_button(&mut self) {
