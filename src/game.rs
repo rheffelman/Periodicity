@@ -49,7 +49,7 @@ pub struct Game {
     pub window: FBox<RenderWindow>,
     pub window_width: u32,
     pub window_height: u32,
-    state: Vec<u32>,
+    pub state: Vec<u32>,
     pub user_input_cache: Vec<u32>,
     pub input_index: usize,
     pub em: entities::EntityManager,
@@ -61,7 +61,8 @@ pub struct Game {
 
     pub time_elapsed: f32,    // total time in seconds (float)
     pub delta_time: f32,      // delta time in seconds (float)
-    pub time_elapsed_ms: u64, // total time in milliseconds (int)
+    pub time_elapsed_ms: u32, // total time in milliseconds (int)
+    pub delta_time_ms: u32,
     last_frame_time: Instant,
     pub miasma_has_spawned: bool,
 }
@@ -104,6 +105,7 @@ impl Game {
             time_elapsed: 0.0,
             delta_time: 0.0,
             time_elapsed_ms: 0,
+            delta_time_ms: 0,
             last_frame_time: Instant::now(),
             miasma_has_spawned: false,
         }
@@ -113,23 +115,32 @@ impl Game {
         while self.window.is_open() {
             self.user_input_main_entry();
 
+            // timekeeping
             let now = Instant::now();
             let frame_duration = now - self.last_frame_time;
-
             self.delta_time = frame_duration.as_secs_f32();
+            self.delta_time_ms = frame_duration.as_millis().min(u32::MAX as u128) as u32;
+            if self.delta_time_ms == 0 {
+                self.delta_time_ms = 1;
+            }
             self.time_elapsed += self.delta_time;
-            self.time_elapsed_ms += frame_duration.as_millis() as u64;
+            self.time_elapsed_ms += self.delta_time_ms;
             self.last_frame_time = now;
 
+            // useless I think
             let progress = (self.time_elapsed % 5.0) / 5.0;
-
             for (_, castbar) in self.em.castbars.iter_mut() {
                 castbar.cast_progress = progress;
             }
-            
-            self.render_main_entry();
+
+            // game systems
+            self.s_debuffs();
             self.update_game_main_entry();
             self.anims.update(self.delta_time);
+
+            // render last
+            self.render_main_entry();
         }
     }
+
 }

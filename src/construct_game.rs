@@ -75,7 +75,7 @@ impl Game {
     }
 
     fn create_enemy(&mut self) {
-        let enemy_id = self.gem.add_entity(None);
+        let enemy_id = self.gem.add_entity(Some("alpine_terror".to_string()));
 
         let next_id = self.gem.next_pid();
         self.gem.mortalities.insert(enemy_id, GPMortality {

@@ -5,6 +5,7 @@ use std::fs;
 
 impl Game {
     pub fn init_main_entry(&mut self) {
+        self.init_game();
         self.fnt.set_smooth(true);
         self.create_run_button();
         self.create_side_buttons();
@@ -12,7 +13,7 @@ impl Game {
         self.anims.load_textures("./src/assets/sprites");
         //self.load_textures("./src/assets/sprites");
         self.init_gui();
-        self.init_game();
+        
     }
 
     fn create_run_button(&mut self) {
@@ -148,13 +149,13 @@ impl Game {
         }
     }
 
-
     fn init_gui(&mut self) {
         let scale_w = self.window_width as f32 / 1920.0;
         let scale_h = self.window_height as f32 / 1080.0;
         let scale = scale_w.min(scale_h).floor().max(1.0) as u32;
         let s = |x: u32| x * scale;
 
+        // textbox encapsulation region
         let tbid = self.em.add_entity(Some("textbox_encap".to_string()));
         self.em.add_property_to_entity(PropertiesEnum::Rect, tbid);
         if let Some(rects) = self.em.rectangles.get_mut(&tbid) {
@@ -170,6 +171,7 @@ impl Game {
             }
         }
 
+        // landscape encapsulation region
         let lseid = self.em.add_entity(Some("landscape".to_string()));
         self.em.add_property_to_entity(PropertiesEnum::Rect, lseid);
         if let Some(rects) = self.em.rectangles.get_mut(&lseid) {
@@ -184,6 +186,7 @@ impl Game {
                 rect.strata = 5;
             }
         }
+
         // forest background sprite
         self.anims.add_animation_instance(AnimatedSprite {
             texture_id: "rainier_background_2".to_string(),
@@ -204,6 +207,7 @@ impl Game {
             lifetime: None,
         });
 
+        // alpine terror sprite
         self.anims.add_animation_instance(AnimatedSprite {
             texture_id: "Alpe".to_string(),
             frame_width: 64,
@@ -223,6 +227,7 @@ impl Game {
             lifetime: None,
         });
 
+        // ground overlay sprite
         self.anims.add_animation_instance(AnimatedSprite {
             texture_id: "ground_overlay3".to_string(),
             frame_width: 1024,
@@ -242,6 +247,7 @@ impl Game {
             lifetime: None,
         });
 
+        // enemy info region
         let enemy_info_region = self.em.add_entity(Some("enemy_info_region".to_string()));
         self.em.add_property_to_entity(PropertiesEnum::Rect, enemy_info_region);
         if let Some(rects) = self.em.rectangles.get_mut(&enemy_info_region) {
@@ -257,6 +263,7 @@ impl Game {
             }
         }
 
+        // enemy info region text
         self.em.add_property_to_entity(PropertiesEnum::Text, enemy_info_region);
         if let Some(texts) = self.em.texts.get_mut(&enemy_info_region) {
             if let Some(text) = texts.get_mut(0) {
@@ -271,6 +278,27 @@ impl Game {
             }
         }
 
+        // enemy healthbar
+        self.em.add_property_to_entity(PropertiesEnum::Healthbar, enemy_info_region);
+        if let Some(hb) = self.em.get_phealthbar_mut(enemy_info_region) {
+            hb.x = s(1920) - s(517);
+            hb.y = s(532 + 60);
+            hb.width = s(502);
+            hb.height = s(50);
+            hb.draw = true;
+            hb.strata = 30;
+            hb.base_colors = ColorPair {
+                fill: (64, 64, 64),
+                outline: (0, 0, 0),
+            };
+            hb.inner_colors = ColorPair {
+                fill: (255, 100, 100),
+                outline: (0, 0, 0),
+            };
+            hb.gem_entity_id = Some(self.gem.get_entity_id_from_name("alpine_terror".to_string()));
+        }
+
+        // tooltip region
         let tooltip_region = self.em.add_entity(Some("tooltip".to_string()));
         self.em.add_property_to_entity(PropertiesEnum::Rect, tooltip_region);
         if let Some(rects) = self.em.rectangles.get_mut(&tooltip_region) {
@@ -295,6 +323,7 @@ impl Game {
 
         let player_id = self.em.add_entity(Some("player".to_string()));
 
+        // player sprite
         self.anims.add_animation_instance(AnimatedSprite {
             texture_id: "my_warlock".to_string(),
             frame_width: 64,
@@ -341,26 +370,6 @@ impl Game {
                 text.strata = 10;
             }
         }
-        // self.animator.add_animation(Animation {
-        //     name: "Miasma".into(),
-        //     frame_size: (64, 64),
-        //     frame_count: 6,
-        //     frame_duration: 0.15, // default, we’ll override during playback
-        //     looping: false,
-        // });
-
-        // initial stats
-        // self.em.add_property_to_entity(PropertiesEnum::Stat, player_id);
-        // if let Some(stats) = self.em.get_pstats_mut(player_id) {
-        //     stats.health_max = 100;
-        //     stats.health_curr = 70;
-        //     stats.chaos = 1;
-        //     stats.solidity = 1;
-        //     stats.vitality = 1;
-        //     stats.haste = 1;
-        //     stats.will = 1;
-        //     stats.volatility = 1;
-        // }
 
         // === HEALTHBAR ===
         self.em.add_property_to_entity(PropertiesEnum::Healthbar, player_id);
@@ -379,6 +388,7 @@ impl Game {
                 fill: (255, 100, 100),
                 outline: (0, 0, 0),
             };
+            hb.gem_entity_id = Some(self.gem.get_entity_id_from_name("player".to_string()));
         }
 
         // === CASTBAR ===

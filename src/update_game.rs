@@ -26,7 +26,7 @@ impl Game {
             if let Some(sprite) = self.anims.active.iter().find(|s| s.texture_id == "Miasma_anim2") {
                 if sprite.current_frame == sprite.total_frames - 2 && sprite.play_once {
                     self.miasma_has_spawned = true;
-
+                    self.state[0] = 1;
                     self.anims.add_animation_instance(crate::animation::AnimatedSprite {
                         texture_id: "miasma_proj_anim2".to_string(),
                         frame_width: 64,

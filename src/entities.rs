@@ -110,6 +110,7 @@ impl EntityManager {
             strata: 20,
             base_colors: ColorPair { fill: (254, 0, 0), outline: (0, 0, 0) },
             inner_colors: ColorPair { fill: (0, 254, 0), outline: (0, 0, 0) },
+            gem_entity_id: None,
         });
     }
 

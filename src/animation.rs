@@ -51,6 +51,7 @@ impl Animation {
         self.active.retain(|sprite| sprite.texture_id != texture_id);
     }
 
+    // called every frame in game.run()
     pub fn update(&mut self, dt: f32) {
         for sprite in &mut self.active {
             // kill dead animations
@@ -60,7 +61,7 @@ impl Animation {
                     sprite.finished = true;
                 }
             }
-            // Movement
+            // movement
             let (vx, vy) = sprite.velocity;
             let (x, y) = sprite.position;
             let new_x = (x as f32 + vx * dt).round().max(0.0) as u32;
@@ -71,7 +72,7 @@ impl Animation {
                 continue;
             }
 
-            // Animation
+            // animation
             sprite.time_accumulator += dt;
             if sprite.time_accumulator >= sprite.frame_time {
                 sprite.time_accumulator -= sprite.frame_time;
@@ -91,6 +92,7 @@ impl Animation {
 
     }
 
+    // provides vector of drawable objects to render pipeline
     pub fn get_drawables(&self) -> Vec<Sprite> {
         let mut sorted_sprites: Vec<&AnimatedSprite> = self.active.iter().collect();
         sorted_sprites.sort_by_key(|sprite| sprite.strata);

@@ -52,10 +52,11 @@ impl Game {
             id: next_id,
             action: crate::g_properties::Actions::CastingSpell,
             action_tag: "miasma".to_string(),
-            time_action_takes: 4000,
-            time_remaining: 4000,
+            time_action_takes: 2000,
+            time_remaining: 2000,
             spell: Some(crate::g_properties::Spells::Miasma),
         };
+
         self.gem.actions.insert(player_id, a.clone());
         println!("Miasma added to action queue");
         self.gem.actionqueue.get_mut(&player_id).unwrap().queue.push(a);
@@ -67,13 +68,24 @@ impl Game {
 
         self.anims.remove_sprite_by_texture("my_warlock");
         self.anims.remove_sprite_by_texture("Miasma_anim2");
+        let action_time = self.gem.actionqueue
+            .get(&self.gem.player_id.unwrap())
+            .unwrap()
+            .queue
+            .first()
+            .unwrap()
+            .time_action_takes;
+        let action_time_sec = action_time as f32 / 1000.0;
+
+        let frame_time = action_time_sec / 12.0;
+
         self.anims.add_animation_instance(crate::animation::AnimatedSprite {
             texture_id: "Miasma_anim2".to_string(),
             frame_width: 64,
             frame_height: 64,
             total_frames: 12,
             current_frame: 0,
-            frame_time: 0.2,
+            frame_time: frame_time,
             time_accumulator: 0.0,
             position: (s(1000) , s(207)),
             inanimate: false,
@@ -124,6 +136,12 @@ impl Game {
 
     fn handle_c_button(&mut self) {
         println!("C button pressed");
+        let c_button = self.em.get_prects_mut_by_tag("c_button");
+        c_button.unwrap()[0].pressed = Some(true);
+        let e_id = self.gem.get_entity_id_from_name("alpine_terror".to_string());
+        if let Some(stats) = self.gem.stats.get_mut(&e_id) {
+            stats.health_curr = stats.health_curr.saturating_sub(5);
+        }
     }
 
     fn handle_d_button(&mut self) {

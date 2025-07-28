@@ -1,6 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 use serde::{Serialize, Deserialize};
-use crate::{entities::EntityManager, g_properties::{GPAction, GPActionQueue, GPAllegiance, GPBuffBar, GPDebuff, GPDebuffBar, GPId, GPMortality, GPStats, GPTarget}, *};
+use crate::{entities::EntityManager, g_properties::{Allegiances, GPAction, GPActionQueue, GPAllegiance, GPBuffBar, GPDebuff, GPDebuffBar, GPId, GPMortality, GPStats, GPTarget}, *};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GameEntityManager {
@@ -40,6 +40,36 @@ impl GameEntityManager {
             game_entity_id_counter: 0,
             game_property_id_counter: 0,
         }
+    }
+
+    pub fn get_entity_id_from_name(&mut self, tag: String) -> u32 {
+        if let Some((&id, _)) = self.gids.iter().find(|(_, gid)| gid.tag == tag) {
+            return id;
+        }
+
+        self.add_entity(Some(tag))
+    }
+
+    pub fn get_enemy(&mut self) -> Option<u32> {
+        for (id, allegiance) in &self.allegiances {
+            if allegiance.allegiance == Allegiances::Enemy  {
+                return Some(*id);
+            }
+        }
+        None
+    }
+
+    pub fn get_all_enemies(&self) -> Vec<u32> {
+        self.allegiances
+            .iter()
+            .filter_map(|(id, allegiance)| {
+                if allegiance.allegiance == Allegiances::Enemy {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     pub fn add_entity(&mut self, tag: Option<String>) -> u32 {

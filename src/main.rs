@@ -11,6 +11,7 @@ mod g_properties;
 mod construct_game;
 mod update_game;
 mod animation;
+mod systems;
 
 #[link(name = "Advapi32")]
 unsafe extern "system" {}

@@ -69,7 +69,8 @@ pub struct PHealthbar {
     pub base_colors: ColorPair,
     pub inner_colors: ColorPair,
     pub draw: bool,
-    pub strata: u8
+    pub strata: u8,
+    pub gem_entity_id: Option<u32>, // this should point to a valid entity in gem (GameEntityManager) if used.
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
