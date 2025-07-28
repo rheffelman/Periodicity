@@ -4,7 +4,6 @@ use crate::{entities, properties::*};
 use crate::game::*;
 use crate::user_input::InputSlot;
 
-
 pub fn wrap_text(text: &str, font: &Font, char_size: u32, max_width: f32) -> String {
     let mut wrapped = String::new();
     let mut line = String::new();

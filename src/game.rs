@@ -30,8 +30,8 @@ pub static OFF_TEXT_CLR: Color = Color::rgba(101,126,150,255);
 pub static MIASMA_COLOR: Color = Color::rgba(125,185,112,255);
 pub static INFERNUM_COLOR: Color = Color::rgba(233,103,6,255);
 
-pub static WINDOW_WIDTH: u32 = 1920;
-pub static WINDOW_HEIGHT: u32  = 1080;
+pub static WINDOW_WIDTH: u32 = 3840;
+pub static WINDOW_HEIGHT: u32  = 2160;
 
 pub fn get_scale() -> u32 {
     let scale_w = WINDOW_WIDTH as f32 / 1920.0;
@@ -109,7 +109,7 @@ impl Game {
     pub fn run(&mut self) {
         while self.window.is_open() {
             self.user_input_main_entry();
-            self.update_game_main_entry();
+
             let now = Instant::now();
             let frame_duration = now - self.last_frame_time;
 
@@ -123,8 +123,10 @@ impl Game {
             for (_, castbar) in self.em.castbars.iter_mut() {
                 castbar.cast_progress = progress;
             }
+            
             self.animator.update(self.delta_time);
             self.render_main_entry();
+            self.update_game_main_entry();
         }
     }
 }

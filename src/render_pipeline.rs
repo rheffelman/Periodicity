@@ -28,6 +28,7 @@ impl Game {
         for (_strata, item) in draw_list {
             self.dispatch_item(item);
         }
+        self.render_player_castbar();
         self.render_tooltips();
         self.window.display();
     }
@@ -74,11 +75,11 @@ impl Game {
             }
         }
 
-        for castbar in self.em.castbars.values() {
-            if castbar.draw {
-                draw_list.push((castbar.strata, DrawableItem::Castbar(castbar.clone())));
-            }
-        }
+        // for castbar in self.em.castbars.values() {
+        //     if castbar.draw {
+        //         draw_list.push((castbar.strata, DrawableItem::Castbar(castbar.clone())));
+        //     }
+        // }
 
         draw_list.sort_by_key(|(strata, _)| *strata);
         draw_list
@@ -272,6 +273,87 @@ impl Game {
         let filled_width = (castbar.width as f32 * cast_progress).max(0.0);
 
         // draw background
+        let mut base_rect = RectangleShape::new();
+        base_rect.set_size((castbar.width as f32, castbar.height as f32));
+        base_rect.set_position((castbar.x as f32, castbar.y as f32));
+        base_rect.set_fill_color(Color::rgb(
+            castbar.base_colors.fill.0,
+            castbar.base_colors.fill.1,
+            castbar.base_colors.fill.2,
+        ));
+        base_rect.set_outline_color(Color::rgb(
+            castbar.base_colors.outline.0,
+            castbar.base_colors.outline.1,
+            castbar.base_colors.outline.2,
+        ));
+        base_rect.set_outline_thickness(2.0);
+        self.window.draw(&base_rect);
+
+        // draw fill
+        let mut inner_rect = RectangleShape::new();
+        inner_rect.set_size((filled_width, castbar.height as f32));
+        inner_rect.set_position((castbar.x as f32, castbar.y as f32));
+        inner_rect.set_fill_color(Color::rgb(
+            spell_data.colors.fill.0,
+            spell_data.colors.fill.1,
+            spell_data.colors.fill.2,
+        ));
+        inner_rect.set_outline_color(Color::rgb(
+            castbar.inner_colors.outline.0,
+            castbar.inner_colors.outline.1,
+            castbar.inner_colors.outline.2,
+        ));
+        inner_rect.set_outline_thickness(0.0);
+        self.window.draw(&inner_rect);
+
+        // spell icon
+        if let Some(texture) = self.textures.get(&current_action.action_tag) {
+            let mut icon_sprite = Sprite::with_texture(&**texture);
+
+            let icon_size = castbar.height as f32;
+            let tex_size = texture.size();
+            let scale_x = icon_size / tex_size.x as f32;
+            let scale_y = icon_size / tex_size.y as f32;
+            icon_sprite.set_scale((scale_x, scale_y));
+
+            let icon_x = castbar.x as f32 + castbar.width as f32;
+            let icon_y = castbar.y as f32;
+            icon_sprite.set_position((icon_x, icon_y));
+
+            self.window.draw(&icon_sprite);
+        }
+    }
+
+    fn render_player_castbar(&mut self) {
+        let player_id_gem = self.gem.player_id.unwrap();
+        let player_id_em = self.em.get_player_id().unwrap();
+
+        let queue = self.gem.actionqueue.get_mut(&player_id_gem).unwrap();
+
+        if queue.queue.is_empty() {
+            return;
+        }
+        let current_action = queue.queue.first_mut().unwrap();
+
+        let dt_ms = (self.delta_time * 1000.0) as u32;
+        current_action.time_remaining =
+            current_action.time_remaining.saturating_sub(dt_ms);
+
+        println!("{}", current_action.time_remaining);
+        println!("{}", current_action.action_tag);
+        if current_action.time_remaining == 0 {
+            queue.queue.remove(0);
+            return;
+        }
+
+        let castbar = self.em.castbars.get(&player_id_em).unwrap();
+        let spell = current_action.spell.as_ref().unwrap().clone();
+        let spell_data = crate::g_properties::get_spell_data(spell.clone()).unwrap();
+        let time_total = current_action.time_action_takes.max(1) as f32;
+        let time_remaining = current_action.time_remaining.min(current_action.time_action_takes) as f32;
+        let cast_progress = 1.0 - (time_remaining / time_total);
+        let filled_width = (castbar.width as f32 * cast_progress).max(0.0);
+
         let mut base_rect = RectangleShape::new();
         base_rect.set_size((castbar.width as f32, castbar.height as f32));
         base_rect.set_position((castbar.x as f32, castbar.y as f32));
