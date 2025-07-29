@@ -3,7 +3,7 @@ use crate::game::*;
 use crate::properties::*;
 use std::fs;
 
-impl Game {
+impl Game<'_> {
     pub fn init_main_entry(&mut self) {
         self.init_game();
         self.fnt.set_smooth(true);
@@ -11,7 +11,6 @@ impl Game {
         self.create_side_buttons();
         self.spawn_player();
         self.anims.load_textures("./src/assets/sprites");
-        //self.load_textures("./src/assets/sprites");
         self.init_gui();
         
     }
@@ -26,12 +25,12 @@ impl Game {
         if let Some(rects) = self.em.get_prects_mut(button_eid) {
             if let Some(rect) = rects.last_mut() {
                 rect.x = s(10);
-                rect.y = s(50);
+                rect.y = s(61);
                 rect.width = s(200);
                 rect.height = s(50);
-                rect.colors = ColorPair::from_colors(BUTTON, MAIN_OUTLINE_CLR);
-                rect.pressed_color = Some(ColorPair::from_colors(BUTTON_PRESSED, MAIN_OUTLINE_CLR));
-                rect.hovered_color = Some(ColorPair::from_colors(BUTTON_HOVERED, MAIN_OUTLINE_CLR));
+                rect.colors = ColorPair::from_colors(BUTTON, Some(sfml::graphics::Color::BLACK));
+                rect.pressed_color = Some(ColorPair::from_colors(BUTTON_PRESSED, None));
+                rect.hovered_color = Some(ColorPair::from_colors(BUTTON_HOVERED, None));
                 rect.draw = true;
                 rect.hovered = Some(false);
                 rect.strata = 10;
@@ -43,8 +42,8 @@ impl Game {
             if let Some(text) = texts.last_mut() {
                 text.scale = scale;
                 text.x = s(15);
-                text.y = s(50);
-                text.colors = ColorPair::from_colors(MAIN_TEXT_CLR, MAIN_OUTLINE_CLR);
+                text.y = s(61);
+                text.colors = ColorPair::from_colors(MAIN_TEXT_CLR, Some(sfml::graphics::Color::BLACK));
                 text.draw = true;
                 text.strata = 15;
             }
@@ -71,13 +70,17 @@ impl Game {
         let scale = get_scale();
         let s = |x: u32| x * scale;
 
-        let run_x = s(10);
+        let run_x = s(20);
         let run_width = s(200);
-        let run_y = s(50);
+        let run_y = s(10);
+        let spacing = 2;
+
+        let button_rows = 2;
+        let button_cols = 4;
+
         let button_height = s(50);
 
-        let spacing = s(10);
-        let left_x = run_x + run_width + spacing;
+        let left_x = run_x + run_width;
 
         let right_x = if let Some(tb_rects) = self.em.get_prects_by_name("textbox_encap") {
             if let Some(tb) = tb_rects.last() {
@@ -90,44 +93,49 @@ impl Game {
         };
 
         let total_width = right_x.saturating_sub(left_x);
-        let button_width = total_width / 4;
+        let total_spacing = spacing * (button_cols as u32 - 1);
+        let button_width = (total_width - total_spacing) / button_cols as u32;
 
-        let labels = ["A", "B", "C", "D"];
+        let labels = ["A", "B", "C", "D", "E", "F", "G", "H"];
         let actions = [
-            ClickAction::A,
-            ClickAction::B,
-            ClickAction::C,
-            ClickAction::D,
+            ClickAction::A, ClickAction::B, ClickAction::C, ClickAction::D,
+            ClickAction::E, ClickAction::F, ClickAction::G, ClickAction::H,
         ];
 
         for (i, (label, action)) in labels.iter().zip(actions.iter()).enumerate() {
+            let row = i / button_cols;
+            let col = i % button_cols;
+
+            let button_x = left_x + col as u32 * (button_width + spacing);
+            let button_y = run_y + row as u32 * (button_height + spacing);
+
             let eid = self.em.create_button(Some(format!("{}_button", label.to_lowercase())));
-            let button_x = left_x + i as u32 * button_width;
 
             if let Some(rects) = self.em.get_prects_mut(eid) {
                 if let Some(rect) = rects.last_mut() {
                     rect.x = button_x;
-                    rect.y = run_y;
+                    rect.y = button_y;
                     rect.width = button_width;
                     rect.height = button_height;
-                    rect.colors = ColorPair::from_colors(ALT_BUTTON, MAIN_OUTLINE_CLR);
-                    rect.pressed_color = Some(ColorPair::from_colors(ALT_BUTTON_PRESSED, MAIN_OUTLINE_CLR));
-                    rect.hovered_color = Some(ColorPair::from_colors(ALT_BUTTON_HOVERED, MAIN_OUTLINE_CLR));
+                    rect.colors = ColorPair::from_colors(ENCAPSULATION_REGIONS, Some(sfml::graphics::Color::BLACK));
+                    rect.pressed_color = Some(ColorPair::from_colors(ALT_BUTTON_PRESSED, None));
+                    rect.hovered_color = Some(ColorPair::from_colors(ALT_BUTTON_HOVERED, None));
                     rect.draw = true;
                     rect.hovered = Some(false);
                     rect.strata = 10;
                 }
             }
-
-            if let Some(texts) = self.em.get_ptexts_mut(eid) {
-                if let Some(text) = texts.last_mut() {
-                    text.scale = scale.saturating_sub(1).max(1);
-                    text.x = button_x + s(5);
-                    text.y = run_y;
-                    text.text = label.to_string();
-                    text.colors = ColorPair::from_colors(MAIN_TEXT_CLR, MAIN_OUTLINE_CLR);
-                    text.draw = true;
-                    text.strata = 15;
+            if *label != "H" && *label != "G" { 
+                if let Some(texts) = self.em.get_ptexts_mut(eid) {
+                    if let Some(text) = texts.last_mut() {
+                        text.scale = scale.saturating_sub(1).max(1) * 2;
+                        text.x = button_x + s(5);
+                        text.y = button_y;
+                        text.text = label.to_string();
+                        text.colors = ColorPair::from_colors(MAIN_TEXT_CLR, Some(MAIN_OUTLINE_CLR));
+                        text.draw = true;
+                        text.strata = 15;
+                    }
                 }
             }
 
@@ -135,13 +143,16 @@ impl Game {
                 tt.header = label.to_string();
                 tt.body = format!("{} button functionality.", label);
                 tt.x = button_x;
-                tt.y = run_y;
+                tt.y = button_y;
                 tt.width = button_width;
                 tt.height = button_height;
                 tt.icon = None;
             }
 
-            if let (Some(rect_id), Some(clickable)) = (self.em.get_prects_mut(eid).and_then(|r| r.last()).map(|r| r.id), self.em.get_pclickable_mut(eid)) {
+            if let (Some(rect_id), Some(clickable)) = (
+                self.em.get_prects_mut(eid).and_then(|r| r.last()).map(|r| r.id),
+                self.em.get_pclickable_mut(eid),
+            ) {
                 clickable.clickable = true;
                 clickable.action = action.clone();
                 clickable.rect_reference_id = Some(rect_id);
@@ -155,23 +166,6 @@ impl Game {
         let scale = scale_w.min(scale_h).floor().max(1.0) as u32;
         let s = |x: u32| x * scale;
 
-        // textbox encapsulation region
-        let tbid = self.em.add_entity(Some("textbox_encap".to_string()));
-        self.em.add_property_to_entity(PropertiesEnum::Rect, tbid);
-        if let Some(rects) = self.em.rectangles.get_mut(&tbid) {
-            if let Some(rect) = rects.get_mut(0) {
-                rect.width = s(610);
-                rect.height = s(800);
-                rect.x = s(10);
-                rect.y = s(120);
-                rect.colors.fill = (29, 33, 37);
-                rect.colors.outline = (0, 0, 0);
-                rect.draw = true;
-                rect.strata = 10;
-            }
-        }
-
-        // landscape encapsulation region
         let lseid = self.em.add_entity(Some("landscape".to_string()));
         self.em.add_property_to_entity(PropertiesEnum::Rect, lseid);
         if let Some(rects) = self.em.rectangles.get_mut(&lseid) {
@@ -181,7 +175,7 @@ impl Game {
                 rect.x = s(1920 - 1044) - s(10);
                 rect.y = s(10);
                 rect.colors.fill = (29, 33, 37);
-                rect.colors.outline = (0, 0, 0);
+                rect.colors.outline = Some((0, 0, 0));
                 rect.draw = true;
                 rect.strata = 5;
             }
@@ -194,7 +188,7 @@ impl Game {
             frame_height: 512,
             total_frames: 1,
             current_frame: 0,
-            frame_time: 9999.0,
+            frame_time: None,
             time_accumulator: 0.0,
             position: (s(1920 - 1044) , s(20)),
             inanimate: true,
@@ -214,7 +208,7 @@ impl Game {
             frame_height: 64,
             total_frames: 1,
             current_frame: 0,
-            frame_time: 9999.0,
+            frame_time: None,
             time_accumulator: 0.0,
             position: (s(1500) , s(207)),
             inanimate: true,
@@ -226,6 +220,7 @@ impl Game {
             velocity: (0.0, 0.0),
             lifetime: None,
         });
+        
 
         // ground overlay sprite
         self.anims.add_animation_instance(AnimatedSprite {
@@ -234,7 +229,7 @@ impl Game {
             frame_height: 512,
             total_frames: 1,
             current_frame: 0,
-            frame_time: 9999.0,
+            frame_time: None,
             time_accumulator: 0.0,
             position: (s(1920 - 1044) , s(20)),
             inanimate: true,
@@ -257,7 +252,7 @@ impl Game {
                 rect.x = s(1920 - 512) - s(10);
                 rect.y = s(532 + 20);
                 rect.colors.fill = (29, 33, 37);
-                rect.colors.outline = (0, 0, 0);
+                rect.colors.outline = Some((0, 0, 0));
                 rect.draw = true;
                 rect.strata = 10;
             }
@@ -271,7 +266,7 @@ impl Game {
                 text.x = s(1920 - 510) - s(10);
                 text.y = s(532 + 20);
                 text.colors.fill = (255, 255, 255);
-                text.colors.outline = (0, 0, 0);
+                text.colors.outline = Some((0, 0, 0));
                 text.draw = true;
                 text.strata = 10;
                 text.text = "Alpine Terror".to_string();
@@ -289,11 +284,11 @@ impl Game {
             hb.strata = 30;
             hb.base_colors = ColorPair {
                 fill: (64, 64, 64),
-                outline: (0, 0, 0),
+                outline: Some((0, 0, 0)),
             };
             hb.inner_colors = ColorPair {
                 fill: (255, 100, 100),
-                outline: (0, 0, 0),
+                outline: Some((0, 0, 0)),
             };
             hb.gem_entity_id = Some(self.gem.get_entity_id_from_name("alpine_terror".to_string()));
         }
@@ -308,11 +303,49 @@ impl Game {
                 rect.x = s(1920 - 1044) - s(10);
                 rect.y = s(532 + 250);
                 rect.colors.fill = (29, 33, 37);
-                rect.colors.outline = (0, 0, 0);
+                rect.colors.outline = Some((0, 0, 0));
                 rect.draw = true;
                 rect.strata = 10;
             }
         }
+
+        self.anims.add_animation_instance(AnimatedSprite {
+            texture_id: "tree_icon".to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            total_frames: 1,
+            current_frame: 0,
+            frame_time: None,
+            time_accumulator: 0.0,
+            position: (s(550) , s(70)),
+            inanimate: true,
+            strata: 30,
+            desired_width: Some(s(32)),
+            desired_height: Some(s(32)),
+            play_once: false,
+            finished: true,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
+
+        self.anims.add_animation_instance(AnimatedSprite {
+            texture_id: "stats".to_string(),
+            frame_width: 64,
+            frame_height: 64,
+            total_frames: 1,
+            current_frame: 0,
+            frame_time: None,
+            time_accumulator: 0.0,
+            position: (s(455) , s(70)),
+            inanimate: true,
+            strata: 30,
+            desired_width: Some(s(32)),
+            desired_height: Some(s(32)),
+            play_once: false,
+            finished: true,
+            velocity: (0.0, 0.0),
+            lifetime: None,
+        });
     }
 
     pub fn spawn_player(&mut self) {
@@ -330,7 +363,7 @@ impl Game {
             frame_height: 64,
             total_frames: 1,
             current_frame: 0,
-            frame_time: 9999.0,
+            frame_time: None,
             time_accumulator: 0.0,
             position: (s(1000) , s(207)),
             inanimate: true,
@@ -351,7 +384,7 @@ impl Game {
                 rect.height = s(200);
                 rect.x = s(1920 - 1044) - s(10);
                 rect.y = s(532 + 20);
-                rect.colors = ColorPair {fill: (29, 33, 37), outline: (0, 0, 0)};
+                rect.colors = ColorPair {fill: (29, 33, 37), outline: Some((0, 0, 0))};
                 rect.draw = true;
                 rect.strata = 10;
             }
@@ -365,7 +398,7 @@ impl Game {
                 text.scale = scale;
                 text.x = s(1920 - 1042) - s(10);
                 text.y = s(532 + 20);
-                text.colors = ColorPair {fill: (255, 255, 255), outline: (0, 0, 0)};
+                text.colors = ColorPair {fill: (255, 255, 255), outline: Some((0, 0, 0))};
                 text.draw = true;
                 text.strata = 10;
             }
@@ -382,11 +415,11 @@ impl Game {
             hb.strata = 30;
             hb.base_colors = ColorPair {
                 fill: (64, 64, 64),
-                outline: (0, 0, 0),
+                outline: Some((0, 0, 0)),
             };
             hb.inner_colors = ColorPair {
                 fill: (255, 100, 100),
-                outline: (0, 0, 0),
+                outline: Some((0, 0, 0)),
             };
             hb.gem_entity_id = Some(self.gem.get_entity_id_from_name("player".to_string()));
         }
@@ -403,11 +436,11 @@ impl Game {
             cb.strata = 30;
             cb.base_colors = ColorPair {
                 fill: (64, 64, 64),
-                outline: (0, 0, 0),
+                outline: Some((0, 0, 0)),
             };
             cb.inner_colors = ColorPair {
                 fill: (100, 100, 255),
-                outline: (0, 0, 0),
+                outline: Some((0, 0, 0)),
             };
             cb.icon_name = "miasma".into();
         }

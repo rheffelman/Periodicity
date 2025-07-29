@@ -42,13 +42,13 @@ impl EntityManager {
         id
     }
 
-    fn next_eid(&mut self) -> u32 { // entity id
+    pub fn next_eid(&mut self) -> u32 { // entity id
         let id = self.entity_id_counter;
         self.entity_id_counter += 1;
         id
     }
 
-    fn next_pid(&mut self) -> u32 { // property id
+    pub fn next_pid(&mut self) -> u32 { // property id
         let id = self.property_id_counter;
         self.property_id_counter += 1;
         id
@@ -74,7 +74,7 @@ impl EntityManager {
             y: 10,
             width: 10,
             height: 10,
-            colors: ColorPair { fill: (19, 81, 150), outline: (24, 26, 28) },
+            colors: ColorPair { fill: (19, 81, 150), outline: Some((24, 26, 28)) },
             hovered_color: None,
             pressed_color: None,
             hovered: None,
@@ -92,9 +92,10 @@ impl EntityManager {
             scale: 1,
             x: 50,
             y: 50,
-            colors: ColorPair { fill: (255, 255, 255), outline: (0, 0, 0) },
+            colors: ColorPair { fill: (255, 255, 255), outline: Some((0, 0, 0)) },
             draw: false,
             strata: 0,
+            lifetime: None,
         });
     }
 
@@ -108,8 +109,8 @@ impl EntityManager {
             height: 10,
             draw: true,
             strata: 20,
-            base_colors: ColorPair { fill: (254, 0, 0), outline: (0, 0, 0) },
-            inner_colors: ColorPair { fill: (0, 254, 0), outline: (0, 0, 0) },
+            base_colors: ColorPair { fill: (254, 0, 0), outline: Some((0, 0, 0)) },
+            inner_colors: ColorPair { fill: (0, 254, 0), outline: Some((0, 0, 0)) },
             gem_entity_id: None,
         });
     }
@@ -126,8 +127,8 @@ impl EntityManager {
             icon_name: "miasma".to_string(),
             draw: true,
             strata: 20,
-            base_colors: ColorPair { fill: (254, 0, 0), outline: (0, 0, 0) },
-            inner_colors: ColorPair { fill: (0, 254, 0), outline: (0, 0, 0) },
+            base_colors: ColorPair { fill: (254, 0, 0), outline: Some((0, 0, 0)) },
+            inner_colors: ColorPair { fill: (0, 254, 0), outline: Some((0, 0, 0)) },
         });
     }
 
@@ -152,11 +153,32 @@ impl EntityManager {
             icon: None,
         });
     }
+    pub fn purge_entity_by_tag(&mut self, tag: &str) {
+        if let Some(entity_id) = self.get_id_by_tag(tag.to_string()) {
+            self.purge_entity_by_id(entity_id);
+        }
+    }
+
+    pub fn purge_entity_by_id(&mut self, id: u32) {
+        self.ids.remove(&id);
+        self.rectangles.remove(&id);
+        self.texts.remove(&id);
+        self.healthbars.remove(&id);
+        self.castbars.remove(&id);
+        self.state_vecs.remove(&id);
+        self.tooltip_data.remove(&id);
+        self.clickables.remove(&id);
+    }
 
     fn add_clickable(&mut self, id: u32) {
         let pid = self.next_pid();
         self.clickables.insert(id, PClickable {
             id: (pid), clickable: (true), rect_reference_id: (None), action: (ClickAction::RunButton) });
+    }
+
+    pub fn get_id_by_tag(&self, tag: String) -> Option<u32> {
+        self.ids.iter()
+        .find_map(|(&id, pid)| if pid.tag == tag { Some(id) } else { None })
     }
 
     pub fn get_player_id(&self) -> Option<u32> {

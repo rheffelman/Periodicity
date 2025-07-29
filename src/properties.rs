@@ -20,14 +20,23 @@ pub struct PId { // each entity must have 1 and only 1 PId
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ColorPair {
     pub fill: (u8, u8, u8),
-    pub outline: (u8, u8, u8),
+    pub outline: Option<(u8, u8, u8)>,
 }
 impl ColorPair {
-    pub fn from_colors(fill: sfml::graphics::Color, outline: sfml::graphics::Color) -> Self {
-        ColorPair {
-            fill: (fill.r, fill.g, fill.b),
-            outline: (outline.r, outline.g, outline.b),
+    pub fn from_colors(fill: sfml::graphics::Color, outline: Option<sfml::graphics::Color>) -> Self {
+        if outline.is_some() {
+            return ColorPair {
+                fill: (fill.r, fill.g, fill.b),
+                outline: Some((outline.unwrap().r, outline.unwrap().g, outline.unwrap().b)),
+            }
         }
+        else {
+            return ColorPair {
+                fill: (fill.r, fill.g, fill.b),
+                outline: None,
+            }
+        }
+
     }
 }
 
@@ -47,7 +56,7 @@ pub struct PRect {
     pub strata: u8,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PText {
     pub id: u32,
     pub text: String,
@@ -56,7 +65,8 @@ pub struct PText {
     pub y: u32,
     pub colors: ColorPair,
     pub draw: bool,
-    pub strata: u8
+    pub strata: u8,
+    pub lifetime: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -122,4 +132,8 @@ pub enum ClickAction {
     B,
     C,
     D,
+    E,
+    F,
+    G,
+    H,
 }

@@ -3,6 +3,7 @@ use std::hash::Hash;
 use sfml::graphics::*;
 use sfml::cpp::*;
 use std::fs;
+
 #[derive(Debug)]
 pub struct AnimatedSprite {
     pub texture_id: String,
@@ -10,7 +11,7 @@ pub struct AnimatedSprite {
     pub frame_height: u32,
     pub total_frames: u32,
     pub current_frame: u32,
-    pub frame_time: f32,
+    pub frame_time: Option<f32>,
     pub time_accumulator: f32,
     pub position: (u32, u32),
     pub inanimate: bool,
@@ -21,8 +22,9 @@ pub struct AnimatedSprite {
     pub finished: bool,
     pub velocity: (f32, f32),
     pub lifetime: Option<f32>,
+    //pub associated_g_entity: Option<u32>,
+    //pub shader: Option<Box<Shader>>,
 }
-
 
 #[derive(Debug)]
 pub struct Animation {
@@ -74,17 +76,19 @@ impl Animation {
 
             // animation
             sprite.time_accumulator += dt;
-            if sprite.time_accumulator >= sprite.frame_time {
-                sprite.time_accumulator -= sprite.frame_time;
+            if let Some(frame_time) = sprite.frame_time {
+                if sprite.time_accumulator >= frame_time {
+                    sprite.time_accumulator -= frame_time;
 
-                if sprite.current_frame + 1 >= sprite.total_frames {
-                    if sprite.play_once {
-                        sprite.finished = true;
+                    if sprite.current_frame + 1 >= sprite.total_frames {
+                        if sprite.play_once {
+                            sprite.finished = true;
+                        } else {
+                            sprite.current_frame = 0;
+                        }
                     } else {
-                        sprite.current_frame = 0;
+                        sprite.current_frame += 1;
                     }
-                } else {
-                    sprite.current_frame += 1;
                 }
             }
         }
@@ -93,7 +97,7 @@ impl Animation {
     }
 
     // provides vector of drawable objects to render pipeline
-    pub fn get_drawables(&self) -> Vec<Sprite> {
+    pub fn get_drawables(&self) -> Vec<(Sprite, String)> {
         let mut sorted_sprites: Vec<&AnimatedSprite> = self.active.iter().collect();
         sorted_sprites.sort_by_key(|sprite| sprite.strata);
 
@@ -127,7 +131,7 @@ impl Animation {
                     sprite.set_scale((scale_x, scale_y));
                 }
 
-                drawables.push(sprite);
+                drawables.push((sprite, sprite_data.texture_id.clone()));
             }
         }
         drawables

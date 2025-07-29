@@ -4,8 +4,10 @@ use std::time::Instant;
 
 use sfml::cpp::FBox;
 use sfml::graphics::{Color, Font, Texture, RenderWindow};
-use sfml::graphics::{Text, RectangleShape, Sprite, RenderTarget, Transformable, Shape};
+use sfml::graphics::{Text, RectangleShape, Sprite, RenderTarget, Transformable, Shape, Shader};
 use sfml::window::{Style};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use crate::animation::Animation;
 use crate::{entities, g_entities};
@@ -13,7 +15,8 @@ use crate::properties::*;
 use crate::user_input::*;
 use crate::construct_window::*;
 
-pub static BASE: Color    = Color::rgba(36, 41, 46, 255);
+pub static BASE: Color    = Color::rgba(43,49,55,255);
+pub static ALT_BASE: Color = Color::rgba(36,41,46,255);
 pub static LIGHTER: Color = Color::rgba(43, 49, 55, 255);
 pub static ENCAPSULATION_REGIONS: Color  = Color::rgba(29, 33, 37, 255);
 pub static BUTTON: Color  = Color::rgba(4,66,137,255);
@@ -30,6 +33,7 @@ pub static MAIN_TEXT_CLR: Color = Color::rgba(246,248,250,255);
 pub static OFF_TEXT_CLR: Color = Color::rgba(101,126,150,255);
 pub static MIASMA_COLOR: Color = Color::rgba(125,185,112,255);
 pub static INFERNUM_COLOR: Color = Color::rgba(233,103,6,255);
+pub static XP_COLOR: Color = Color::rgba(98,67,211,255);
 
 pub static WINDOW_WIDTH: u32 = 3840;
 pub static WINDOW_HEIGHT: u32  = 2160;
@@ -44,8 +48,8 @@ pub fn scaled(scale: u32, x: u32) -> u32 {
     x * scale
 }
 
-#[derive(Debug)]
-pub struct Game {
+// #[derive(Debug)]
+pub struct Game<'a> {
     pub window: FBox<RenderWindow>,
     pub window_width: u32,
     pub window_height: u32,
@@ -56,8 +60,12 @@ pub struct Game {
     pub gem: g_entities::GameEntityManager,
     pub em_gem_link: HashMap<u32, u32>,
     pub fnt: FBox<Font>,
+    pub gbfnt: FBox<Font>,
     pub textures: HashMap<String, FBox<Texture>>,
     pub anims: Animation,
+    pub damage_queue: Vec<crate::systems::Damage>,
+    pub desat_shader: FBox<Shader<'a>>,
+    pub floating_texts: Vec<crate::systems::FloatingText>,
 
     pub time_elapsed: f32,    // total time in seconds (float)
     pub delta_time: f32,      // delta time in seconds (float)
@@ -67,8 +75,8 @@ pub struct Game {
     pub miasma_has_spawned: bool,
 }
 
-impl Game {
-    pub fn new() -> Game {
+impl<'a> Game<'a> {
+    pub fn new() -> Game<'a> {
         let mut window = RenderWindow::new(
             (WINDOW_WIDTH, WINDOW_HEIGHT),
             "Periodicity",
@@ -80,6 +88,8 @@ impl Game {
 
         let font = Font::from_file("./src/assets/lilex.ttf")
             .expect("Failed to load font");
+        let gbfont = Font::from_file("./src/assets/gb.ttf")
+            .expect("Failed to load font");
         
         let one_mb_bytes: usize = 1024 * 1024;
         let u32_size: usize = mem::size_of::<u32>();
@@ -88,6 +98,10 @@ impl Game {
         let state_vec: Vec<u32> = vec![0; num_elements];
         let user_input_vec: Vec<u32> = vec![0; num_elements];
 
+        let mut shader = Shader::from_file("./src/shaders/desaturate.frag", sfml::graphics::ShaderType::Fragment)
+            .expect("Failed to load shader");
+        shader.set_uniform_float("desaturation", 1.0).unwrap();
+        
         Game {
             window,
             window_width: WINDOW_WIDTH,
@@ -99,8 +113,12 @@ impl Game {
             gem: g_entities::GameEntityManager::new(),
             em_gem_link: HashMap::new(),
             fnt: font,
+            gbfnt: gbfont,
             textures: HashMap::new(),
             anims: Animation::new(),
+            damage_queue: Vec::new(),
+            desat_shader: shader,
+            floating_texts: Vec::new(),
 
             time_elapsed: 0.0,
             delta_time: 0.0,
@@ -113,7 +131,7 @@ impl Game {
 
     pub fn run(&mut self) {
         while self.window.is_open() {
-            self.user_input_main_entry();
+            self.user_input_main_entry(); // branch to user_input.rs
 
             // timekeeping
             let now = Instant::now();
@@ -127,20 +145,23 @@ impl Game {
             self.time_elapsed_ms += self.delta_time_ms;
             self.last_frame_time = now;
 
-            // useless I think
-            let progress = (self.time_elapsed % 5.0) / 5.0;
-            for (_, castbar) in self.em.castbars.iter_mut() {
-                castbar.cast_progress = progress;
-            }
-
             // game systems
-            self.s_debuffs();
-            self.update_game_main_entry();
+            
+            self.s_mortality(); // branch to systems.rs
+            self.s_debuffs(); // branch to systems.rs
+            self.s_damage(); // branch to systems.rs
+            self.update_game_main_entry(); // branch to update_game.rs
             self.anims.update(self.delta_time);
 
             // render last
-            self.render_main_entry();
+            self.render_main_entry(); // branch to render_pipeline.rs
         }
     }
 
 }
+
+
+// STATE DEFINITIONS:
+
+// state[0] == miasma
+// state[1] == infernum

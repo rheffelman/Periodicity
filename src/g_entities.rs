@@ -1,6 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 use serde::{Serialize, Deserialize};
-use crate::{entities::EntityManager, g_properties::{Allegiances, GPAction, GPActionQueue, GPAllegiance, GPBuffBar, GPDebuff, GPDebuffBar, GPId, GPMortality, GPStats, GPTarget}, *};
+use crate::{entities::EntityManager, g_properties::{Allegiances, GPAction, GPActionQueue, GPAllegiance, GPBuffBar, GPDebuff, GPDebuffBar, GPId, GPLevel, GPMortality, GPStats, GPTarget}, *};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GameEntityManager {
@@ -15,6 +15,8 @@ pub struct GameEntityManager {
     pub debuffbars: HashMap<u32, GPDebuffBar>,
     pub actions: HashMap<u32, GPAction>,
     pub actionqueue: HashMap<u32, GPActionQueue>,
+    pub levels: HashMap<u32, GPLevel>,
+    pub texture_to_entity: HashMap<String, u32>,
 
     pub player_id: Option<u32>,
     game_entity_id_counter: u32,
@@ -35,6 +37,8 @@ impl GameEntityManager {
             debuffbars: HashMap::new(),
             actions: HashMap::new(),
             actionqueue: HashMap::new(),
+            levels: HashMap::new(),
+            texture_to_entity: HashMap::new(),
 
             player_id: None,
             game_entity_id_counter: 0,

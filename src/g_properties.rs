@@ -44,7 +44,14 @@ pub struct GPStats {
     pub will: u32,
     pub volatility: u32
 }
-
+pub enum StatsEnum {
+    Chaos,
+    Solidity,
+    Vitality,
+    Haste,
+    Will,
+    Volatility,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct GPTarget {
     pub id: u32,
@@ -121,32 +128,44 @@ pub struct SpellData {
     pub duration: u32,
 
 }
-pub fn get_spelldata_from_string(spell: String) -> Option<SpellData> {
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct GPLevel {
+    pub id: u32,
+    pub curr_level: u32,
+    pub curr_xp: u32,
+    pub next_level_xp: u32,
+}
+
+pub fn get_spelldata_from_string(spell: &String) -> Option<SpellData> {
     if spell == "miasma" || spell == "Miasma" {
         return get_spell_data(Spells::Miasma);
     }
+    else if spell == "infernum" || spell == "Infernum" {
+        return get_spell_data(Spells::Infernum);
+    }
     return None;
 }
+
 pub fn get_spell_data(sp: Spells) -> Option<SpellData> {
     if sp == Spells::Miasma {
         Some(SpellData {
             icon: "miasma".to_string(),
-            colors: ColorPair::from_colors(MIASMA_COLOR, MAIN_OUTLINE_CLR),
+            colors: ColorPair::from_colors(MIASMA_COLOR, Some(MAIN_OUTLINE_CLR)),
             upfront_dam: 0,
             coefficient: 3,
-            dps: 2,
+            dps: 5,
             duration: 5,
         })
     }
     else if sp == Spells::Infernum {
         Some(SpellData { 
             icon: ("infernum".to_string()), 
-            colors: (ColorPair::from_colors(INFERNUM_COLOR, MAIN_OUTLINE_CLR)),
+            colors: (ColorPair::from_colors(INFERNUM_COLOR, Some(MAIN_OUTLINE_CLR))),
             upfront_dam: 5,
             coefficient: 2,
             dps: 1,
-            duration: 5 })
-
+            duration: 10 })
     }
     else {
         None

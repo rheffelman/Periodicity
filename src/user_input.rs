@@ -16,7 +16,7 @@ impl InputSlot {
     }
 }
 
-impl Game {
+impl Game<'_> {
 
     pub fn user_input_main_entry(&mut self) {
         self.cache_user_input();
