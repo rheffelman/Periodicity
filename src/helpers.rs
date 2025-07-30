@@ -12,38 +12,40 @@ pub fn random_point_in_rect(width: u32, height: u32) -> (u32, u32) {
     (x, y)
 }
 
+impl<'a> Game<'a> {
+    pub fn get_player_stats(&mut self, n: u32) -> Option<u32> {
+        let pid = self.gem.player_id.unwrap();
+        let player_stats = self.gem.stats.get(&pid).unwrap();
+
+        match n {
+            2 => Some(player_stats.chaos),
+            3 => Some(player_stats.solidity),
+            4 => Some(player_stats.vitality),
+            5 => Some(player_stats.haste),
+            6 => Some(player_stats.will),
+            _ => None,
+        }
+    }
+}
+
 pub fn get_stat(n: u32) -> Option<String> {
-    if n == 2 {
-        return Some("chaos".to_string());
-    }
-    else if n == 3 {
-        return Some("solidity".to_string());
-    }
-    else if n == 4 {
-        return Some("vitality".to_string());
-    }
-    else if n == 5 {
-        return Some("haste".to_string());
-    }
-    else {
-        return None;
+    match n {
+        2 => Some("chaos".to_string()),
+        3 => Some("solidity".to_string()),
+        4 => Some("vitality".to_string()),
+        5 => Some("haste".to_string()),
+        6 => Some("will".to_string()),
+        _ => None,
     }
 }
 pub fn get_stat_color(n: u32) -> Option<(u8, u8, u8)> {
-    if n == 2 {
-        return Some((EPIC.r, EPIC.g, EPIC.b));
-    }
-    else if n == 3 {
-        return Some((122, 122, 115));
-    }
-    else if n == 4 {
-        return Some((224, 65, 52));
-    }
-    else if n == 5 {
-        return Some((240, 190, 88));
-    }
-    else {
-        return None;
+    match n {
+        2 => Some((EPIC.r, EPIC.g, EPIC.b)),
+        3 => Some((122, 122, 115)),
+        4 => Some((224, 65, 52)),
+        5 => Some((240, 190, 88)),
+        6 => Some((198,38,65)),
+        _ => None,
     }
 }
 

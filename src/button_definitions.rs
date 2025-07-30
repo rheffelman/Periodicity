@@ -240,6 +240,9 @@ impl Game<'_> {
 
             // Add icon and text if stat exists
             if let Some(stat_name) = crate::helpers::get_stat(i) {
+                // Get player stat value before mutable borrow of self.em
+                let player_stat_value = self.get_player_stats(i).unwrap().to_string();
+
                 // Add icon as its own entity with a trackable tag
                 let icon_tag = format!("encap_icon_{}", i);
                 let icon_eid = self.em.add_entity(Some(icon_tag));
@@ -248,10 +251,10 @@ impl Game<'_> {
                 // Add text label to the icon entity
                 if let Some(texts) = self.em.get_ptexts_mut(icon_eid) {
                     if let Some(text) = texts.get_mut(0) {
-                        text.text = stat_name.clone();
+                        text.text = stat_name.clone() + ": " + &player_stat_value;
                         text.x = s(140);
                         text.y = s(120 * i + 30);
-                        text.scale = 4;
+                        text.scale = s(3);
                         text.colors.fill = crate::helpers::get_stat_color(i).unwrap_or((255, 255, 255));
                         text.colors.outline = Some((0, 0, 0));
                         text.draw = true;

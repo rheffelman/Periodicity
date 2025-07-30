@@ -35,8 +35,8 @@ pub static MIASMA_COLOR: Color = Color::rgba(125,185,112,255);
 pub static INFERNUM_COLOR: Color = Color::rgba(233,103,6,255);
 pub static XP_COLOR: Color = Color::rgba(98,67,211,255);
 
-pub static WINDOW_WIDTH: u32 = 3840;
-pub static WINDOW_HEIGHT: u32  = 2160;
+pub static WINDOW_WIDTH: u32 = 1920;
+pub static WINDOW_HEIGHT: u32  = 1080;
 
 pub fn get_scale() -> u32 {
     let scale_w = WINDOW_WIDTH as f32 / 1920.0;
