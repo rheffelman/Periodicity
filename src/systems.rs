@@ -207,6 +207,7 @@ impl Game<'_> {
             play_once: true,
             finished: false,
             velocity: (0.0, 0.0),
-            lifetime: Some(spell_duration as f32) });
+            lifetime: Some(spell_duration as f32),
+            associated_g_entity: None, });
     }
 }

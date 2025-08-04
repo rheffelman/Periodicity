@@ -199,6 +199,7 @@ impl Game<'_> {
             finished: false,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
 
         // alpine terror sprite
@@ -219,6 +220,7 @@ impl Game<'_> {
             finished: true,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
         
 
@@ -240,6 +242,7 @@ impl Game<'_> {
             finished: true,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
 
         // enemy info region
@@ -326,6 +329,7 @@ impl Game<'_> {
             finished: true,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
 
         self.anims.add_animation_instance(AnimatedSprite {
@@ -345,6 +349,7 @@ impl Game<'_> {
             finished: true,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
     }
 
@@ -374,6 +379,7 @@ impl Game<'_> {
             finished: false,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
 
         // player info background encapsulation region

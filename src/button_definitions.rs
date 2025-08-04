@@ -103,6 +103,7 @@ impl Game<'_> {
             finished: false,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
     }
 
@@ -175,6 +176,7 @@ impl Game<'_> {
             finished: false,
             velocity: (0.0, 0.0),
             lifetime: None,
+            associated_g_entity: None,
         });
     }
 
@@ -279,6 +281,7 @@ impl Game<'_> {
                     finished: false,
                     velocity: (0.0, 0.0),
                     lifetime: None,
+                    associated_g_entity: None,
                 });
             }
         }

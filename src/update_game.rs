@@ -58,6 +58,7 @@ impl Game<'_> {
                         finished: false,
                         velocity: (600.0, 0.0),
                         lifetime: Some(1.2),
+                        associated_g_entity: None,
                     });
                 }
             }

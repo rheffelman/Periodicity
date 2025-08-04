@@ -22,7 +22,7 @@ pub struct AnimatedSprite {
     pub finished: bool,
     pub velocity: (f32, f32),
     pub lifetime: Option<f32>,
-    //pub associated_g_entity: Option<u32>,
+    pub associated_g_entity: Option<u32>,
     //pub shader: Option<Box<Shader>>,
 }
 

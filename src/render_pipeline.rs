@@ -163,6 +163,7 @@ impl Game<'_> {
                             finished: false,
                             velocity: (0.0, 0.0),
                             lifetime: None,
+                            associated_g_entity: None,
                         };
 
                         if let Some(sprite) = self.anims.get_drawable(&aspr) {
@@ -362,6 +363,7 @@ impl Game<'_> {
                 finished: false,
                 velocity: (0.0, 0.0),
                 lifetime: None,
+                associated_g_entity: None,
             };
 
             if let Some(sprite) = self.anims.get_drawable(&aspr) {
