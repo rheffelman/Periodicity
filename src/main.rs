@@ -15,7 +15,6 @@ mod systems;
 
 #[link(name = "Advapi32")]
 unsafe extern "system" {}
-
 fn main() {
     let mut g = game::Game::new();
     g.init_main_entry(); // branch to construct_window.rs
